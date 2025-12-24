@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Identity.API/Identity.API.csproj" />
+  <Project Path="Identity.Core/Identity.Core.csproj" />
+</Solution>
