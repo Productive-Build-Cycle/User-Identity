@@ -30,6 +30,8 @@ public static class DependencyInjection
             options.UseSqlServer(connectionStrring);
         });
 
+        services.AddHostedService<RoleInitializer>();
+
         return services;
 
     }
