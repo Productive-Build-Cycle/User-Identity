@@ -17,9 +17,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DTOs\Role\" />
-    <Folder Include="DTOs\User\" />
-  </ItemGroup>
-
 </Project>

@@ -2,6 +2,7 @@
 using FluentValidation.AspNetCore;
 using Identity.Core.Data;
 using Identity.Core.Domain.Entities;
+using Identity.Core.Validators.AuthValidators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,12 +16,11 @@ public static class DependencyInjection
     {
 
         // TODO: Add AutoMapper Profiles
-        // TODO: Add ValidationClasses
         // TODO: Add JWT Service
 
         services.AddAutoMapper(typeof(ApplicationUser).Assembly);
         services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
-        services.AddValidatorsFromAssemblyContaining<ApplicationUser>();
+        services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
         var connectionStrring = configuration.GetConnectionString("Default")
             ?? throw new KeyNotFoundException("CONNECTION STRING IS NULL!");

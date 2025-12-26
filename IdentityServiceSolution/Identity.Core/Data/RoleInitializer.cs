@@ -1,4 +1,5 @@
-﻿using Identity.Core.Domain.Entities;
+﻿using System.Security.Claims;
+using Identity.Core.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,8 +14,8 @@ public class RoleInitializer : IHostedService
 
     public RoleInitializer(IServiceProvider serviceProvider, ILogger<RoleInitializer> logger)
     {
-        _roleManager = serviceProvider.CreateScope()
-            .ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var scope = serviceProvider.CreateScope();
+        _roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         _logger = logger;
     }
 
@@ -22,41 +23,58 @@ public class RoleInitializer : IHostedService
     {
         _logger.LogInformation("ROLE INITIALIZER STARTED");
 
-        var roles = new[] { "Admin", "Mentor", "User" };
+        var rolePermissions = new Dictionary<string, string[]>
+        {
+            ["Admin"] = new[]
+            {
+                "user.create","user.update","user.delete","user.ban","user.unban",
+                "mentor.create","mentor.update","mentor.delete",
+                "role.create","role.update","role.delete"
+            },
+            ["Mentor"] = new[] { "user.ban", "user.unban", "mentor.update", "mentor.delete" },
+            ["User"] = new[] { "user.delete", "user.update" }
+        };
 
-        foreach (var roleName in roles)
+        foreach (var (roleName, permissions) in rolePermissions)
         {
             try
             {
-                if (await _roleManager.RoleExistsAsync(roleName))
+                if (!await _roleManager.RoleExistsAsync(roleName))
                 {
-                    _logger.LogInformation("{Role} already exists, skipping...", roleName);
-                    continue;
-                }
-
-                var result = await _roleManager.CreateAsync(
-                    new ApplicationRole { Name = roleName });
-
-                if (result.Succeeded)
-                {
+                    var createResult = await _roleManager.CreateAsync(new ApplicationRole { Name = roleName });
+                    if (!createResult.Succeeded)
+                    {
+                        _logger.LogError(
+                            "Failed to create {Role}: {Errors}",
+                            roleName,
+                            string.Join(", ", createResult.Errors.Select(e => e.Description))
+                        );
+                        continue;
+                    }
                     _logger.LogInformation("{Role} created successfully.", roleName);
                 }
-                else
+
+                var role = await _roleManager.FindByNameAsync(roleName);
+                if (role == null) continue;
+
+                var existingClaims = await _roleManager.GetClaimsAsync(role);
+
+                foreach (var permission in permissions)
                 {
-                    _logger.LogError(
-                        "Failed to create {Role}: {Errors}",
-                        roleName,
-                        string.Join(", ", result.Errors.Select(e => e.Description))
-                    );
+                    if (existingClaims.Any(c => c.Type == "permission" && c.Value == permission))
+                        continue;
+
+                    var claimResult = await _roleManager.AddClaimAsync(role, new Claim("permission", permission));
+
+                    if (claimResult.Succeeded)
+                        _logger.LogInformation("Added permission {Permission} to role {Role}", permission, roleName);
+                    else
+                        _logger.LogError("Failed to add permission {Permission} to role {Role}", permission, roleName);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Exception while creating role {Role}",
-                    roleName
-                );
+                _logger.LogError(ex, "Exception while initializing role {Role}", roleName);
             }
         }
     }
