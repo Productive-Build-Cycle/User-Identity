@@ -14,7 +14,8 @@ public record RegisterRequest(
 
 public record LoginRequest(
     string Email,
-    string Password
+    string Password,
+    bool RememberMe = false
 );
 
 public record RefreshTokenRequest(
