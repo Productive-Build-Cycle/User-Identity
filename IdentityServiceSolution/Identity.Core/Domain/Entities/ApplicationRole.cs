@@ -5,6 +5,8 @@ using System.Text;
 
 namespace Identity.Core.Domain.Entities;
 
-public class ApplicationRole : IdentityRole<Guid> 
-{ 
+public class ApplicationRole : BaseEntity
+{
+
+    public required string RoleName { get; set; }
 }
