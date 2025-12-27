@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Identity.Core.Data;
-using Identity.Core.Domain.Entities;
+using Identity.Core.MappingProfiles;
 using Identity.Core.Validators.AuthValidators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -15,10 +15,9 @@ public static class DependencyInjection
     public static IServiceCollection AddCore(this IServiceCollection services, IConfiguration configuration)
     {
 
-        // TODO: Add AutoMapper Profiles
         // TODO: Add JWT Service
 
-        services.AddAutoMapper(typeof(ApplicationUser).Assembly);
+        services.AddAutoMapper(typeof(UserProfile).Assembly);
         services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
         services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 

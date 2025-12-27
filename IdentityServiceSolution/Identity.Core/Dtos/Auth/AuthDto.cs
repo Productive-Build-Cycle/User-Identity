@@ -1,4 +1,4 @@
-using Identity.Core.Dtos.Users;
+using Identity.Core.DTOs.Users;
 
 namespace Identity.Core.Dtos.Auth;
 
@@ -10,7 +10,12 @@ public record RegisterRequest(
     string ConfirmPassword,
     string FirstName,
     string LastName
-);
+)
+{
+    public RegisterRequest() : this(default, default, default, default, default, default)
+    {
+    }
+};
 
 public record LoginRequest(
     string Email,
@@ -27,7 +32,12 @@ public record AuthResponse(
     string AccessToken,
     DateTime ExpiresAt,
     UserResponse User
-);
+)
+{
+    public AuthResponse() : this(default, default, default)
+    {
+    }
+};
 
 public record RefreshTokenResponse(
     string AccessToken,

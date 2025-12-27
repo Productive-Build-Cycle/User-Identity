@@ -1,4 +1,4 @@
-namespace Identity.Core.Dtos.Users;
+namespace Identity.Core.DTOs.Users;
 
 // ---------- Requests ----------
 public record AddUserRequest(
@@ -7,15 +7,26 @@ public record AddUserRequest(
     string FirstName,
     string LastName,
     string? PhoneNumber
-);
+)
+{
+    public AddUserRequest() : this(default, default, default, default, default)
+    {
+    }
+};
 
 public record UpdateUserRequest(
     Guid Id,
     string FirstName,
     string LastName,
+    string Email,
     string? PhoneNumber,
     bool IsActive
-);
+)
+{
+    public UpdateUserRequest() : this(default, default, default, default, default, default)
+    {
+    }
+};
 
 // ---------- Responses ----------
 public record UserResponse(
@@ -26,4 +37,9 @@ public record UserResponse(
     string? PhoneNumber,
     bool IsActive,
     List<string> Roles
-);
+)
+{
+    public UserResponse() : this(default, default, default, default, default, default, default)
+    {
+    }
+};
