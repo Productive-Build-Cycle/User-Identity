@@ -1,11 +1,12 @@
 using Identity.API.Middlewares;
-using Microsoft.AspNetCore.Mvc;
 using Identity.Core;
-using Serilog;
-using Identity.Core.Domain.Entities;
+using Identity.Core.Application.Mapper;
 using Identity.Core.Data;
-using Microsoft.AspNetCore.Identity;
+using Identity.Core.Domain.Entities;
 using Identity.Core.Exceptions;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,7 @@ builder.Services.AddSerilog(options =>
     options.WriteTo.Console();
     options.WriteTo.Seq("http://localhost:5341/");
 });
+builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 
 
 builder.Services.AddControllers(options =>
