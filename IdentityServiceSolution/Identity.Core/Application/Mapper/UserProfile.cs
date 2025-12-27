@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Identity.Core.Application.DTOs.Auth;
+using Identity.Core.Application.DTOs.Role;
 using Identity.Core.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,29 @@ namespace Identity.Core.Application.Mapper
             // ApplicationUser -> UserInfoResponse
             CreateMap<ApplicationUser, AuthRespose.UserInfoResponse>()
                 .ForMember(d => d.Roles, o => o.Ignore()); // roles separate
+
+            // ApplicationUser -> UserInfoResponse
+            CreateMap<ApplicationUser, AuthRespose.UserInfoResponse>()
+                .ForMember(d => d.Roles, o => o.Ignore()); // roles separate
+
+            // AddRoleRequest -> ApplicationRole
+            CreateMap<AddRoleRequest, ApplicationRole>()
+                .ForMember(d => d.Name, o => o.MapFrom(s => s.Name))
+                .ForMember(d => d.Id, o => o.Ignore())
+                .ForMember(d => d.NormalizedName, o => o.Ignore())
+                .ForMember(d => d.ConcurrencyStamp, o => o.Ignore());
+
+            // UpdateRoleRequest -> ApplicationRole
+            CreateMap<UpdateRoleRequest, ApplicationRole>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => Guid.Parse(s.Id)))
+                .ForMember(d => d.Name, o => o.MapFrom(s => s.Name))
+                .ForMember(d => d.NormalizedName, o => o.Ignore())
+                .ForMember(d => d.ConcurrencyStamp, o => o.Ignore());
+
+            // ApplicationRole -> RoleResponse
+            CreateMap<ApplicationRole, RoleResponse>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => s.Id.ToString()))
+                .ForMember(d => d.Name, o => o.MapFrom(s => s.Name));
 
         }
     }
