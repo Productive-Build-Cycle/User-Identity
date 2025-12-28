@@ -5,9 +5,11 @@ using Identity.Core.Options;
 using Identity.Core.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 namespace Identity.Tests;
 
@@ -196,5 +198,93 @@ public class TokenServiceTests
         // Assert
         Assert.True(result.ExpiresAt > DateTime.UtcNow);
     }
+
+    [Fact]
+    public void GenerateRefreshToken_Should_Return_NonEmpty_Base64_String()
+    {
+        // Act
+        var refreshToken = _sut.GenerateRefreshToken();
+
+        // Assert
+        Assert.False(string.IsNullOrWhiteSpace(refreshToken));
+
+        var bytes = Convert.FromBase64String(refreshToken);
+        Assert.Equal(64, bytes.Length);
+    }
+
+    [Fact]
+    public void GenerateRefreshToken_Should_Generate_Unique_Tokens()
+    {
+        // Act
+        var token1 = _sut.GenerateRefreshToken();
+        var token2 = _sut.GenerateRefreshToken();
+
+        // Assert
+        Assert.NotEqual(token1, token2);
+    }
+
+    [Fact]
+    public void GetClaimsFromToken_Should_Return_ClaimsPrincipal_For_Valid_Token()
+    {
+        // Arrange
+        var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Email, "test@test.com"),
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+
+        var token = CreateJwtToken(claims, DateTime.UtcNow.AddMinutes(5));
+
+        // Act
+        var principal = _sut.GetClaimsFromToken(token);
+
+        // Assert
+        Assert.NotNull(principal);
+        Assert.Equal("test@test.com",
+            principal.FindFirst(ClaimTypes.Email)?.Value);
+        Assert.True(principal.IsInRole("Admin"));
+    }
+
+    [Fact]
+    public void GetClaimsFromToken_Should_Allow_Expired_Token()
+    {
+        // Arrange
+        var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString())
+            };
+
+        var expiredToken = CreateJwtToken(
+            claims,
+            DateTime.UtcNow.AddMinutes(-10)
+        );
+
+        // Act
+        var principal = _sut.GetClaimsFromToken(expiredToken);
+
+        // Assert
+        Assert.NotNull(principal);
+    }
+
+    private string CreateJwtToken(IEnumerable<Claim> claims, DateTime expires)
+    {
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_jwtOptions.Key));
+
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
+            claims: claims,
+            expires: expires,
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+
 
 }

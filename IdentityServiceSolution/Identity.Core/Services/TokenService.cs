@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Identity.Core.Services;
@@ -30,6 +31,14 @@ public class TokenService : ITokenService
         _mapper = mapper;
         _userManager = userManager;
         _roleManager = roleManager;
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var bytes = new byte[64];
+        using var range = RandomNumberGenerator.Create();
+        range.GetBytes(bytes);
+        return Convert.ToBase64String(bytes);
     }
 
     public async Task<AuthResponse> GenerateToken(ApplicationUser user)
@@ -86,5 +95,28 @@ public class TokenService : ITokenService
             User = mappedUser
         };
 
+    }
+
+    public ClaimsPrincipal GetClaimsFromToken(string token)
+    {
+        var tokenValidator = new TokenValidationParameters()
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = false, // نکته : توکنی که ما الان داریم میگیریم منقضی شده پس نیازی به این نیست
+            ValidIssuer = _tokenOptions.Issuer,
+            ValidAudience = _tokenOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_tokenOptions.Key))
+        };
+
+        var principal = new JwtSecurityTokenHandler()
+            .ValidateToken(token, tokenValidator, out var securityToken);
+
+        if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+            !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            throw new SecurityTokenException("Invalid token");
+
+        return principal;
     }
 }

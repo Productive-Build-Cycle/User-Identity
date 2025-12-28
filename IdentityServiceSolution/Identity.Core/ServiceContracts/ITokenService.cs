@@ -7,4 +7,6 @@ namespace Identity.Core.ServiceContracts;
 public interface ITokenService
 {
     Task<AuthResponse> GenerateToken(ApplicationUser user);
+    ClaimsPrincipal GetClaimsFromToken(string token);
+    string GenerateRefreshToken();
 }
