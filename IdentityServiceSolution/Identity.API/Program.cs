@@ -6,6 +6,9 @@ using Identity.Core.Domain.Entities;
 using Identity.Core.Data;
 using Microsoft.AspNetCore.Identity;
 using Identity.Core.Exceptions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,14 +45,46 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(opt =>
 .AddErrorDescriber<IdentityTranslatedErrors>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddAuthentication(opt =>
+{
+    opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(opt =>
+{
+    var jwtSection = builder.Configuration.GetSection("JwtTokenOptions");
+    opt.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSection["Issuer"],
+        ValidAudience = jwtSection["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
+    };
+});
+
 builder.Services.AddCore(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+    });
+});
+
+
 var app = builder.Build();
 
 app.UseExceptionHandlingMiddleware();
+
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
