@@ -74,7 +74,11 @@ public class IdentityTranslatedErrors : IdentityErrorDescriber
         };
 
     public override IdentityError PasswordRequiresDigit() =>
-        new() { Code = nameof(PasswordRequiresDigit), Description = "رمز عبور باید شامل حداقل یک رقم باشد." };
+        new() 
+        { 
+            Code = nameof(PasswordRequiresDigit), 
+            Description = "رمز عبور باید شامل حداقل یک رقم باشد." 
+        };
 
     public override IdentityError PasswordRequiresLower() =>
         new()
@@ -88,5 +92,18 @@ public class IdentityTranslatedErrors : IdentityErrorDescriber
         {
             Code = nameof(PasswordRequiresUpper),
             Description = "رمز عبور باید شامل حداقل یک حرف بزرگ انگلیسی باشد."
+        };
+    public IdentityError RoleNotFound(string id) =>
+        new() 
+        { 
+                Code = "RoleNotFound", 
+                Description = $"نقش با شناسه '{id}' یافت نشد." 
+        };
+
+    public IdentityError UserNotFound(string id) =>
+        new() 
+        { 
+                Code = "UserNotFound", 
+                Description = $"کاربر با شناسه '{id}' یافت نشد." 
         };
 }
