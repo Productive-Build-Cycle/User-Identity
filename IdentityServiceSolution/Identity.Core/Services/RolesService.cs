@@ -1,17 +1,12 @@
 ﻿using AutoMapper;
-using Azure.Core;
+using Identity.Core.Data;
 using Identity.Core.Domain.Entities;
 using Identity.Core.Dtos.Roles;
-using Identity.Core.Dtos.Users;
 using Identity.Core.Exceptions;
 using Identity.Core.ServiceContracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Text;
 
 namespace Identity.Core.Services
 {
@@ -21,16 +16,20 @@ namespace Identity.Core.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly IdentityTranslatedErrors _errorDescriber;
+        private readonly ApplicationDbContext _context;
+
         public RolesService(
             IMapper mapper,
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
-            IdentityTranslatedErrors errorDescriber)
+            IdentityTranslatedErrors errorDescriber,
+            ApplicationDbContext context)
         {
             _mapper = mapper;
             _userManager = userManager;
             _roleManager = roleManager;
             _errorDescriber = errorDescriber;
+            _context = context;
         }
         public async Task<RoleResponse> AddRoleAsync(AddRoleRequest request)
         {
@@ -122,20 +121,16 @@ namespace Identity.Core.Services
 
         public async Task<IEnumerable<RoleResponse>> GetRolesHavingClaimAsync(string claimType, string claimValue)
         {
-            var allRoles = await _roleManager.Roles.ToListAsync();
-            var rolesWithClaim = new List<ApplicationRole>();
+            var roles = await _roleManager.Roles
+                .Where(r => _context.RoleClaims.Any(c =>
+                    c.RoleId == r.Id &&
+                    c.ClaimType == claimType &&
+                    c.ClaimValue == claimValue))
+                .ToListAsync();
 
-            foreach (var role in allRoles)
-            {
-                var claims = await _roleManager.GetClaimsAsync(role);
-                if (claims.Any(c => c.Type == claimType && c.Value == claimValue))
-                {
-                    rolesWithClaim.Add(role);
-                }
-            }
-
-            return _mapper.Map<IEnumerable<RoleResponse>>(rolesWithClaim);
+            return _mapper.Map<IEnumerable<RoleResponse>>(roles);
         }
+
         private void HandleIdentityResult(IdentityResult result)
         {
             if (!result.Succeeded)

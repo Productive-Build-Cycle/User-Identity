@@ -1,4 +1,4 @@
-namespace Identity.Core.DTOs.Users;
+namespace Identity.Core.Dtos.Users;
 
 // ---------- Requests ----------
 public record AddUserRequest(
