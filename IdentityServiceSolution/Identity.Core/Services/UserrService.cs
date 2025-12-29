@@ -9,13 +9,12 @@ using Microsoft.AspNetCore.Identity;
 namespace Identity.Core.Services;
 
 public class UserrService(UserManager<ApplicationUser> userManagerr,
-    SignInManager<ApplicationUser> signInManager,
-    TokenService _tokenService,
+    SignInManager<ApplicationUser> signInManager,    ITokenService _tokenService,
     IMapper mapper) : IUserService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManagerr;
     private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
-    private readonly TokenService _tokenServiceInstance = _tokenService;
+    private readonly ITokenService _tokenServiceInstance = _tokenService;
     private readonly IMapper _mapper = mapper;
 
 
