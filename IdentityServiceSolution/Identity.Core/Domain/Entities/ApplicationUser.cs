@@ -5,10 +5,10 @@ using System.Text;
 
 namespace Identity.Core.Domain.Entities;
 
-public class ApplicationUser : IdentityUser<Guid>
+public class ApplicationUser : BaseEntity
 {
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string RefreshToken { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? RefreshToken { get; set; }
     public DateTime RefreshTokenExpiery { get; set; }
 }
