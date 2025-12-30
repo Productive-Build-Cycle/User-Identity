@@ -3,22 +3,30 @@ using Identity.Core.Domain.Entities;
 using Identity.Core.Dtos.Auth;
 using Identity.Core.Dtos.Users;
 using Identity.Core.Exceptions;
+using Identity.Core.Options;
 using Identity.Core.ServiceContracts;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
+using System.Text;
+using Identity.Core.Dtos.Roles;
 
 namespace Identity.Core.Services;
 
 public class UserrService(UserManager<ApplicationUser> userManagerr,
-    SignInManager<ApplicationUser> signInManager,    ITokenService _tokenService,
-    IMapper mapper) : IUserService
+    SignInManager<ApplicationUser> signInManager, ITokenService _tokenService, IConfiguration conf,
+    IMapper mapper, IEmailService emailService, IRolesService roleService) : IUserService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManagerr;
     private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
     private readonly ITokenService _tokenServiceInstance = _tokenService;
+    private readonly IConfiguration _conf = conf;
+    private readonly IEmailService _emailService = emailService;
+    private readonly IRolesService _roleService;
     private readonly IMapper _mapper = mapper;
 
 
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    public async Task<RergisterResponse> RegisterAsync(RegisterRequest request)
     {
         if (await _userManager.FindByEmailAsync(request.Email) is not null)
         {
@@ -33,7 +41,46 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
             throw new InvalidOperationException(
                 string.Join(" | ", result.Errors.Select(e => e.Description)));
 
-        return await _tokenServiceInstance.GenerateToken(user);
+        await roleService.AddUserToRoleAsync(new AssignRoleToUserRequest(user.Id, "User"));
+
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+        var backLink = $"{_conf["BaseUrl"]}/api/auth/confirm-email?userId={user.Id}&token={encodedToken}";
+
+        var body = await _emailService.TurnHtmlToString("EmailConfirmation.html",
+                new Dictionary<string, string>
+                {
+                    ["VerificationLink"] = backLink,
+                    ["Year"] = DateTime.UtcNow.Year.ToString()
+                });
+
+        await _emailService.SendEmailAsync(new EmailOptions(user.Email, "تایید حساب کاربری", body));
+
+        return new RergisterResponse(IsEmailConfirmed: false, Email: user.Email,
+            Message: "ثبت نام با موفقیت انجام شد. لطفاً ایمیل خود را برای تایید حساب کاربری بررسی کنید.");
+    }
+
+    public async Task<AuthResponse> ConfirmEmailAsync(string userId, string token)
+    {
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("شناسه کاربر یا توکن ارسال نشده است.");
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+            throw new InvalidOperationException("کاربری با این شناسه وجود ندارد.");
+
+        var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+
+        var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+        if (!result.Succeeded)
+            throw new InvalidOperationException("توکن نامعتبر، منقضی یا قبلاً استفاده شده است.");
+
+        await _signInManager.SignInAsync(user, isPersistent: false);
+
+        var authResponse = await _tokenServiceInstance.GenerateToken(user);
+
+        return authResponse;
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
@@ -52,7 +99,10 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
                 $"دسترسی شما به اکانت به مدت {remaining.Minutes} دقیقه محدود شده است");
         }
 
-        if(user.Banned)
+        if (!user.EmailConfirmed)
+            throw new InvalidOperationException("لطفا حساب کاربری خود را تایید حنید");
+
+        if (user.Banned)
             throw new InvalidOperationException("اکانت شما مسدود شده است. برای اطلاعات بیشتر با پشتیبانی تماس بگیرید.");
 
         var result = await _signInManager.CheckPasswordSignInAsync(

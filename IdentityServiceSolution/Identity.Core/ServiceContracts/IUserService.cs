@@ -7,7 +7,9 @@ namespace Identity.Core.ServiceContracts;
 
 public interface IUserService
 {
-    Task<AuthResponse> RegisterAsync(AuthDTOs.RegisterRequest request);
+    Task<RergisterResponse> RegisterAsync(AuthDTOs.RegisterRequest request);
+
+    Task<AuthResponse> ConfirmEmailAsync(string userId, string token); 
 
     Task<AuthResponse> LoginAsync(AuthDTOs.LoginRequest request);
 

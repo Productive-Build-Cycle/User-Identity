@@ -17,6 +17,11 @@ public record RegisterRequest(
     }
 };
 
+public record RergisterResponse(
+    bool IsEmailConfirmed,
+    string Email,
+    string Message);
+
 public record LoginRequest(
     string Email,
     string Password,

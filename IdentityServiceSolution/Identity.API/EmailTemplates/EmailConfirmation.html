@@ -1,0 +1,167 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تأیید رسمی حساب کاربری | PBC</title>
+    <style>
+        /* Reset Styles */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+
+        body {
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            background-color: #f0f2f5;
+            font-family: Tahoma, Arial, sans-serif; /* فونت‌های استاندارد برای ایمیل */
+            direction: rtl;
+        }
+
+        .email-wrapper {
+            width: 100%;
+            background-color: #f0f2f5;
+            padding: 40px 0;
+        }
+
+        .email-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border: 1px solid #e1e4e8;
+            border-radius: 4px; /* گوشه‌های تیزتر برای ظاهر رسمی */
+        }
+
+        .header {
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 3px solid #1a202c; /* خط رسمی تیره */
+        }
+
+            .header h1 {
+                color: #1a202c;
+                font-size: 22px;
+                margin: 0;
+                font-weight: bold;
+                letter-spacing: 1px;
+            }
+
+        .body-text {
+            padding: 40px 50px;
+            color: #2d3748;
+            line-height: 1.8;
+            text-align: right;
+        }
+
+            .body-text p {
+                margin-bottom: 20px;
+                font-size: 15px;
+            }
+
+        .button-container {
+            padding: 20px 0 40px;
+            text-align: center;
+        }
+
+        .btn-official {
+            background-color: #1a202c; /* رنگ سرمه‌ای بسیار تیره/مشکی رسمی */
+            color: #ffffff !important;
+            padding: 14px 40px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 2px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .link-section {
+            padding: 0 50px 40px;
+        }
+
+        .link-label {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .raw-link {
+            padding: 12px;
+            background-color: #f8fafc;
+            border: 1px dashed #cbd5e0;
+            font-size: 12px;
+            color: #4a5568;
+            word-break: break-all;
+            text-align: left; /* لینک‌ها معمولا LTR هستند */
+            direction: ltr;
+        }
+
+        .footer {
+            padding: 30px;
+            background-color: #f8fafc;
+            text-align: center;
+            border-top: 1px solid #e1e4e8;
+            font-size: 12px;
+            color: #718096;
+        }
+
+            .footer b {
+                color: #2d3748;
+            }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-content">
+
+            <div class="header">
+                <h1>تأیید هویت دیجیتال PBC</h1>
+            </div>
+
+            <div class="body-text">
+                <p>کاربر گرامی،</p>
+                <p>با تشکر از انتخاب مجموعه <strong>PBC</strong>. جهت تکمیل فرآیند ثبت‌نام و فعال‌سازی دسترسی‌های امنیتی حساب کاربری خود، مقتضی است بر روی پیوند زیر کلیک فرمایید:</p>
+            </div>
+
+            <div class="button-container">
+                <a href="{{VerificationLink}}" class="btn-official">تأیید نهایی حساب کاربری</a>
+            </div>
+
+            <div class="link-section">
+                <p style="font-size: 14px; color: #4a5568; margin-bottom: 10px;">در صورت عدم عملکرد دکمه فوق، آدرس زیر را در مرورگر خود درج نمایید:</p>
+                <div class="raw-link">
+                    {{VerificationLink}}
+                </div>
+            </div>
+
+            <div class="body-text" style="padding-top: 0; padding-bottom: 30px;">
+                <p style="font-size: 13px; color: #718096;">چنانچه این درخواست از جانب شما ارسال نشده است، لطفاً نسبت به نادیده گرفتن این مکاتبه اقدام فرمایید.</p>
+            </div>
+
+            <div class="footer">
+                تمامی حقوق مادی و معنوی این سرویس متعلق به <b>PBC</b> می‌باشد.
+                <br>
+                © {{Year}} PBC Organization. All Rights Reserved.
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
