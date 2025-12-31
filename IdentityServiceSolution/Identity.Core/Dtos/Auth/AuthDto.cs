@@ -17,6 +17,10 @@ public record RegisterRequest(
     }
 };
 
+public record BanAccountRequest(
+    string Email
+    );
+
 public record RergisterResponse(
     bool IsEmailConfirmed,
     string Email,
@@ -32,8 +36,20 @@ public record RefreshTokenRequest(
     string RefreshToken
 );
 
+public record ForgotPasswordRequest(
+    string Email,
+    string CallbackUri
+    );
+
+public record ResetPasswordRequest(
+    string Token,
+    string Email,
+    string Password,
+    string ConfirmPassword
+    );
+
 public record ChangePasswordRequest(
-    string UserId,
+    string Email,
     string CurrentPassword,
     string NewPassword,
     string ConfirmNewPassword

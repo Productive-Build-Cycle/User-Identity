@@ -1,27 +1,28 @@
-﻿using Identity.Core.Dtos.Auth;
-using Microsoft.AspNetCore.Identity.Data;
-using AuthDTOs = Identity.Core.Dtos.Auth;
+﻿using FluentResults;
+using Identity.Core.Dtos.Auth;
 using Identity.Core.Dtos.Users;
 
 namespace Identity.Core.ServiceContracts;
 
 public interface IUserService
 {
-    Task<RergisterResponse> RegisterAsync(AuthDTOs.RegisterRequest request);
+    Task<Result<RergisterResponse>> RegisterAsync(RegisterRequest request);
 
-    Task<AuthResponse> ConfirmEmailAsync(string userId, string token); 
+    Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token);
 
-    Task<AuthResponse> LoginAsync(AuthDTOs.LoginRequest request);
+    Task<Result<AuthResponse>> LoginAsync(LoginRequest request);
 
-    Task LogoutAsync(string userId);
+    Task<UserResponse> GetUserByEmail(string email);
 
-    Task ChangePasswordAsync(ChangePasswordRequest request);
+    Task<Result> LogoutAsync(string userId);
 
-    Task UpdateAccountAsync(string userId, UpdateUserRequest request);
+    Task<Result> ChangePasswordAsync(ChangePasswordRequest request);
 
-    Task DeleteAccountAsync(string userId);
+    Task<Result> UpdateAccountAsync(string userId, UpdateUserRequest request);
 
-    Task BanAccountAsync(string targetUserId, string actorUserId);
+    Task<Result> DeleteAccountAsync(string userId);
 
-    Task UnbanAccountAsync(string targetUserId, string actorUserId);
+    Task<Result> BanAccountAsync(BanAccountRequest request);
+
+    Task<Result> UnbanAccountAsync(BanAccountRequest request);
 }

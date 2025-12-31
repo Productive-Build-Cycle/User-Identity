@@ -28,10 +28,9 @@ public class RoleInitializer : IHostedService
             ["Admin"] = new[]
             {
                 "user.create","user.update","user.delete","user.ban","user.unban",
-                "mentor.create","mentor.update","mentor.delete",
                 "role.create","role.update","role.delete"
             },
-            ["Mentor"] = new[] { "user.ban", "user.unban", "mentor.update", "mentor.delete" },
+            ["Mentor"] = new[] { "user.ban", "user.unban", "user.update", "user.delete" },
             ["User"] = new[] { "user.delete", "user.update" }
         };
 

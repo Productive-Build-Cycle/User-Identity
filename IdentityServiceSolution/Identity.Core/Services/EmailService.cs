@@ -1,23 +1,14 @@
 ﻿using Identity.Core.Options;
 using Identity.Core.ServiceContracts;
 using Microsoft.AspNetCore.Hosting;
-using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
 
 namespace Identity.Core.Services;
 
-public class EmailService : IEmailService
+public class EmailService(IWebHostEnvironment env) : IEmailService
 {
-    private readonly IWebHostEnvironment _env;
-
-    public EmailService(IWebHostEnvironment env)
-    {
-        _env = env;
-    }
-
     public Task SendEmailAsync(EmailOptions options)
     {
         var address = "amirmahditeymoori123@gmail.com";
@@ -43,7 +34,7 @@ public class EmailService : IEmailService
     public async Task<string> TurnHtmlToString(string fileName, IDictionary<string, string> values)
     {
         var path = Path.Combine(
-           _env.ContentRootPath,
+           env.ContentRootPath,
            "EmailTemplates",
            fileName
        );

@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using FluentResults;
 using Identity.Core.Domain.Entities;
 using Identity.Core.Dtos.Auth;
+using Identity.Core.Dtos.Roles;
 using Identity.Core.Dtos.Users;
 using Identity.Core.Exceptions;
 using Identity.Core.Options;
@@ -8,166 +10,176 @@ using Identity.Core.ServiceContracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
+using System.Net;
 using System.Text;
-using Identity.Core.Dtos.Roles;
 
 namespace Identity.Core.Services;
 
-public class UserrService(UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager,
-    ITokenService tokenService, 
-    IConfiguration conf,
-    IMapper mapper, 
-    IEmailService emailService, 
-    IRolesService roleService) : IUserService
+public class UserrService : IUserService
 {
-    
-    public async Task<RergisterResponse> RegisterAsync(RegisterRequest request)
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly ITokenService _tokenService;
+    private readonly IConfiguration _conf;
+    private readonly IMapper _mapper;
+    private readonly IEmailService _emailService;
+    private readonly IRolesService _roleService;
+
+    public UserrService(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        RoleManager<ApplicationRole> roleManager,
+        ITokenService tokenService,
+        IConfiguration conf,
+        IMapper mapper,
+        IEmailService emailService,
+        IRolesService roleService)
     {
-        if (await userManager.FindByEmailAsync(request.Email) is not null)
-        {
-            var error = new IdentityTranslatedErrors().DuplicateEmail(request.Email);
-            throw new InvalidOperationException(error.Description);
-        }
+        _userManager = userManager;
+        _signInManager = signInManager;
+        _roleManager = roleManager;
+        _tokenService = tokenService;
+        _conf = conf;
+        _mapper = mapper;
+        _emailService = emailService;
+        _roleService = roleService;
+    }
 
-        var user = mapper.Map<ApplicationUser>(request);
+    public async Task<Result<RergisterResponse>> RegisterAsync(RegisterRequest request)
+    {
+        if (await _userManager.FindByEmailAsync(request.Email) is not null)
+            return Result.Fail(Errors.DuplicateEmail(request.Email));
 
-        var result = await userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
-            throw new InvalidOperationException(
-                string.Join(" | ", result.Errors.Select(e => e.Description)));
+        var user = _mapper.Map<ApplicationUser>(request);
 
-        await roleService.AddUserToRoleAsync(new AssignRoleToUserRequest(user.Id, "User"));
+        var createResult = await _userManager.CreateAsync(user, request.Password);
+        if (!createResult.Succeeded)
+            return Result.Fail(createResult.Errors.Select(e =>
+                new Error(e.Description)
+                    .WithMetadata("StatusCode", HttpStatusCode.BadRequest)));
 
-        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        await _roleService.AddUserToRoleAsync(
+            new AssignRoleToUserRequest(user.Id, "User"));
+
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-        var backLink = $"{conf["BaseUrl"]}/api/auth/confirm-email?userId={user.Id}&token={encodedToken}";
+        var confirmUrl =
+            $"{_conf["BaseUrl"]}/api/auth/confirm-email?userId={user.Id}&token={encodedToken}";
 
-        var body = await emailService.TurnHtmlToString("EmailConfirmation.html",
-                new Dictionary<string, string>
-                {
-                    ["VerificationLink"] = backLink,
-                    ["Year"] = DateTime.UtcNow.Year.ToString()
-                });
+        var body = await _emailService.TurnHtmlToString(
+            "EmailConfirmation.html",
+            new Dictionary<string, string>
+            {
+                ["VerificationLink"] = confirmUrl,
+                ["Year"] = DateTime.UtcNow.Year.ToString()
+            });
 
-        await emailService.SendEmailAsync(new EmailOptions(user.Email, "تایید حساب کاربری", body));
+        await _emailService.SendEmailAsync(
+            new EmailOptions(user.Email, "تایید حساب کاربری", body));
 
-        return new RergisterResponse(IsEmailConfirmed: false, Email: user.Email,
-            Message: "ثبت نام با موفقیت انجام شد. لطفاً ایمیل خود را برای تایید حساب کاربری بررسی کنید.");
+        return Result.Ok(new RergisterResponse(
+            IsEmailConfirmed: false,
+            Email: user.Email,
+            Message: "ثبت نام با موفقیت انجام شد. لطفاً ایمیل خود را برای تایید حساب کاربری بررسی کنید."
+        ));
     }
 
-    public async Task<AuthResponse> ConfirmEmailAsync(string userId, string token)
+    public async Task<Result<AuthResponse>> ConfirmEmailAsync(string userId, string token)
     {
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
-            throw new InvalidOperationException("شناسه کاربر یا توکن ارسال نشده است.");
+            return Result.Fail(Errors.InvalidToken);
 
-        var user = await userManager.FindByIdAsync(userId);
+        var user = await _userManager.FindByIdAsync(userId);
         if (user is null)
-            throw new InvalidOperationException("کاربری با این شناسه وجود ندارد.");
+            return Result.Fail(Errors.UserNotFound(userId));
 
-        var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+        var decodedToken =
+            Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
 
-        var result = await userManager.ConfirmEmailAsync(user, decodedToken);
-        if (!result.Succeeded)
-            throw new InvalidOperationException("توکن نامعتبر، منقضی یا قبلاً استفاده شده است.");
+        var confirmResult =
+            await _userManager.ConfirmEmailAsync(user, decodedToken);
 
-        await signInManager.SignInAsync(user, isPersistent: false);
+        if (!confirmResult.Succeeded)
+            return Result.Fail(Errors.InvalidToken);
 
-        var authResponse = await tokenService.GenerateToken(user);
-
-        return authResponse;
+        var auth = await _tokenService.GenerateToken(user);
+        return Result.Ok(auth);
     }
 
-    public async Task<AuthResponse> LoginAsync(LoginRequest request)
+    public async Task<Result<AuthResponse>> LoginAsync(LoginRequest request)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
-
+        var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
-            throw new UnauthorizedAccessException("کاربری با این ایمیل وجود ندارد");
-
-        if (user.LockoutEnabled &&
-            user.LockoutEnd.HasValue &&
-            user.LockoutEnd.Value > DateTimeOffset.UtcNow)
-        {
-            var remaining = user.LockoutEnd.Value - DateTimeOffset.UtcNow;
-            throw new InvalidOperationException(
-                $"دسترسی شما به اکانت به مدت {remaining.Minutes} دقیقه محدود شده است");
-        }
-
-        if (!user.EmailConfirmed)
-            throw new InvalidOperationException("لطفا حساب کاربری خود را تایید حنید");
+            return Result.Fail(Errors.InvalidCredentials);
 
         if (user.Banned)
-            throw new InvalidOperationException("اکانت شما مسدود شده است. برای اطلاعات بیشتر با پشتیبانی تماس بگیرید.");
+            return Result.Fail(Errors.AccountBanned);
 
-        var result = await signInManager.CheckPasswordSignInAsync(
+        if (!user.EmailConfirmed)
+            return Result.Fail(Errors.EmailNotConfirmed);
+
+        if (user.LockoutEnd.HasValue &&
+            user.LockoutEnd > DateTimeOffset.UtcNow)
+        {
+            var remaining = user.LockoutEnd.Value - DateTimeOffset.UtcNow;
+            return Result.Fail(Errors.AccountLocked(remaining));
+        }
+
+        var signInResult = await _signInManager.CheckPasswordSignInAsync(
             user,
             request.Password,
             lockoutOnFailure: true);
 
-        if (!result.Succeeded)
-        {
-            if (result.IsLockedOut)
-            {
-                var lockoutMinutes = 5 * user.LockoutMultiplier;
-
-                user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(lockoutMinutes);
-                user.LockoutMultiplier *= 2;
-                await userManager.UpdateAsync(user);
-
-                throw new InvalidOperationException(
-                    $"رمز عبور نامعتبر. دسترسی شما به مدت {lockoutMinutes} دقیقه محدود شد");
-            }
-
-            throw new UnauthorizedAccessException("رمز عبور یا نام کاربری نامعتبر است");
-        }
+        if (!signInResult.Succeeded)
+            return Result.Fail(Errors.InvalidCredentials);
 
         if (user.LockoutMultiplier > 1)
         {
             user.LockoutMultiplier = 1;
-            await userManager.UpdateAsync(user);
+            await _userManager.UpdateAsync(user);
         }
 
-        return await tokenService.GenerateToken(user);
+        var auth = await _tokenService.GenerateToken(user);
+        return Result.Ok(auth);
     }
 
-    public async Task LogoutAsync(string userId)
+    public async Task<Result> LogoutAsync(string userId)
     {
-        var user = await userManager.FindByIdAsync(userId);
+        var user = await _userManager.FindByIdAsync(userId);
         if (user is not null)
-        {
-            await userManager.UpdateSecurityStampAsync(user); // نکته: این کد واسه منقضی کدرن توکن های کاربر نوشته شده
-        }
+            await _userManager.UpdateSecurityStampAsync(user);
 
-        await signInManager.SignOutAsync();
+        await _signInManager.SignOutAsync();
+        return Result.Ok();
     }
 
-    public async Task ChangePasswordAsync(ChangePasswordRequest request)
+    public async Task<Result> ChangePasswordAsync(ChangePasswordRequest request)
     {
-        var user = await userManager.FindByIdAsync(request.UserId);
+        var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
-            throw new InvalidOperationException(
-                new IdentityTranslatedErrors().UserNotFound(request.UserId).Description);
+            return Result.Fail(Errors.UserNotFound(request.Email));
 
-        var result = await userManager.ChangePasswordAsync(
+        var result = await _userManager.ChangePasswordAsync(
             user,
             request.CurrentPassword,
             request.NewPassword);
 
         if (!result.Succeeded)
-            throw new InvalidOperationException(
-                string.Join(" | ", result.Errors.Select(e => e.Description)));
+            return Result.Fail(result.Errors.Select(e =>
+                new Error(e.Description)
+                    .WithMetadata("StatusCode", HttpStatusCode.BadRequest)));
 
-        await userManager.UpdateSecurityStampAsync(user);
+        await _userManager.UpdateSecurityStampAsync(user);
+        return Result.Ok();
     }
 
-    public async Task UpdateAccountAsync(string userId, UpdateUserRequest request)
+    public async Task<Result> UpdateAccountAsync(string userId, UpdateUserRequest request)
     {
-        var user = await userManager.FindByIdAsync(userId);
+        var user = await _userManager.FindByIdAsync(userId);
         if (user is null)
-            throw new InvalidOperationException(
-                new IdentityTranslatedErrors().UserNotFound(userId).Description);
+            return Result.Fail(Errors.UserNotFound(userId));
 
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;
@@ -175,66 +187,66 @@ public class UserrService(UserManager<ApplicationUser> userManager,
         user.UserName = request.Email;
         user.PhoneNumber = request.PhoneNumber;
 
-        var result = await userManager.UpdateAsync(user);
+        var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
-            throw new InvalidOperationException(
-                string.Join(" | ", result.Errors.Select(e => e.Description)));
+            return Result.Fail(result.Errors.Select(e =>
+                new Error(e.Description)
+                    .WithMetadata("StatusCode", HttpStatusCode.BadRequest)));
+
+        return Result.Ok();
     }
 
-    public async Task DeleteAccountAsync(string userId)
+    public async Task<Result> DeleteAccountAsync(string userId)
     {
-        var user = await userManager.FindByIdAsync(userId);
+        var user = await _userManager.FindByIdAsync(userId);
         if (user is null)
-            throw new InvalidOperationException(
-                new IdentityTranslatedErrors().UserNotFound(userId).Description);
+            return Result.Fail(Errors.UserNotFound(userId));
 
-        await userManager.DeleteAsync(user);
+        await _userManager.DeleteAsync(user);
+        return Result.Ok();
     }
 
-    public async Task BanAccountAsync(string targetUserId, string actorUserId)
+    public async Task<Result> BanAccountAsync(BanAccountRequest request)
     {
-        var actor = await userManager.FindByIdAsync(actorUserId);
-        if (actor is null)
-            throw new UnauthorizedAccessException("کاربر اقدام‌کننده یافت نشد");
-
-        var claims = await userManager.GetClaimsAsync(actor);
-        if (!claims.Any(c => c.Type == "user.ban"))
-            throw new UnauthorizedAccessException("شما اجازه بستن حساب کاربری را ندارید");
-
-        var user = await userManager.FindByIdAsync(targetUserId);
+       
+        var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
-            throw new InvalidOperationException(
-                new IdentityTranslatedErrors().UserNotFound(targetUserId).Description);
+            return Result.Fail(Errors.UserNotFound(request.Email));
 
         if (user.Banned)
-            throw new InvalidOperationException("کاربر مورد نظر درحال حاضر مسدود شده است");
+            return Result.Fail(Errors.AlreadyBanned);
 
-        user.LockoutEnd = DateTimeOffset.MaxValue;
         user.Banned = true;
-        await userManager.UpdateAsync(user);
-        await userManager.UpdateSecurityStampAsync(user);
+        user.LockoutEnd = DateTimeOffset.MaxValue;
+
+        await _userManager.UpdateAsync(user);
+        await _userManager.UpdateSecurityStampAsync(user);
+
+        return Result.Ok();
     }
 
-    public async Task UnbanAccountAsync(string targetUserId, string actorUserId)
+    public async Task<Result> UnbanAccountAsync(BanAccountRequest request)
     {
-        var actor = await userManager.FindByIdAsync(actorUserId);
-        if (actor is null)
-            throw new UnauthorizedAccessException("کاربر اقدام‌کننده یافت نشد");
-
-        var claims = await userManager.GetClaimsAsync(actor);
-        if (!claims.Any(c => c.Type == "user.ban"))
-            throw new UnauthorizedAccessException("شما اجازه باز کردن حساب کاربری را ندارید");
-
-        var user = await userManager.FindByIdAsync(targetUserId);
+        var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
-            throw new InvalidOperationException(
-                new IdentityTranslatedErrors().UserNotFound(targetUserId).Description);
+            return Result.Fail(Errors.UserNotFound(request.Email));
 
         if (!user.Banned)
-            throw new InvalidOperationException("کاربر مورد نظر درحال حاضر مسدود نشده");
+            return Result.Fail(Errors.NotBanned);
 
-        user.LockoutEnd = null;
         user.Banned = false;
-        await userManager.UpdateAsync(user);
+        user.LockoutEnd = null;
+
+        await _userManager.UpdateAsync(user);
+        await _userManager.UpdateSecurityStampAsync(user);
+
+        return Result.Ok();
+    }
+
+    public async Task<UserResponse> GetUserByEmail(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        var mapped = _mapper.Map<UserResponse>(user);
+        return mapped;
     }
 }

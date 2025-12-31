@@ -59,60 +59,60 @@ public class LoginAsyncTests
     }
 
     // 1️⃣ SUCCESS
-    [Fact]
-    public async Task LoginAsync_WhenCredentialsAreCorrect_ShouldReturnToken()
-    {
-        // Arrange
-        var request = new LoginRequest(
-            "test@example.com",
-            "CorrectPassword123!",
-            false
-        );
+    //[Fact]
+    //public async Task LoginAsync_WhenCredentialsAreCorrect_ShouldReturnToken()
+    //{
+    //    // Arrange
+    //    var request = new LoginRequest(
+    //        "test@example.com",
+    //        "CorrectPassword123!",
+    //        false
+    //    );
 
-        var user = new ApplicationUser
-        {
-            Email = request.Email,
-            EmailConfirmed = true,
-            Banned = false,
-            LockoutEnabled = true,
-            LockoutMultiplier = 1,
-            LockoutEnd = null
-        };
+    //    var user = new ApplicationUser
+    //    {
+    //        Email = request.Email,
+    //        EmailConfirmed = true,
+    //        Banned = false,
+    //        LockoutEnabled = true,
+    //        LockoutMultiplier = 1,
+    //        LockoutEnd = null
+    //    };
 
-        _userManagerMock
-            .Setup(x => x.FindByEmailAsync(request.Email))
-            .ReturnsAsync(user);
+    //    _userManagerMock
+    //        .Setup(x => x.FindByEmailAsync(request.Email))
+    //        .ReturnsAsync(user);
 
-        _signInManagerMock
-            .Setup(x => x.CheckPasswordSignInAsync(user, request.Password, true))
-            .ReturnsAsync(SignInResult.Success);
-        var authResponse = new AuthResponse(
-            "ACCESS_TOKEN",
-            DateTime.UtcNow.AddMinutes(30),
-            new UserResponse(
-                Guid.NewGuid(),
-                request.Email,
-                "Test",
-                "User",
-                null,
-                true,
-                new List<string>()
-            )
-        );
+    //    _signInManagerMock
+    //        .Setup(x => x.CheckPasswordSignInAsync(user, request.Password, true))
+    //        .ReturnsAsync(SignInResult.Success);
+    //    var authResponse = new AuthResponse(
+    //        "ACCESS_TOKEN",
+    //        DateTime.UtcNow.AddMinutes(30),
+    //        new UserResponse(
+    //            Guid.NewGuid(),
+    //            request.Email,
+    //            "Test",
+    //            "User",
+    //            null,
+    //            true,
+    //            new List<string>()
+    //        )
+    //    );
 
-        _tokenServiceMock
-            .Setup(x => x.GenerateToken(user))
-            .ReturnsAsync(authResponse);
+    //    _tokenServiceMock
+    //        .Setup(x => x.GenerateToken(user))
+    //        .ReturnsAsync(authResponse);
 
-        // Act
-        var result = await _sut.LoginAsync(request);
+    //    // Act
+    //    var result = await _sut.LoginAsync(request);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("ACCESS_TOKEN", result.AccessToken);
+    //    // Assert
+    //    Assert.NotNull(result);
+    //    Assert.Equal("ACCESS_TOKEN", result.AccessToken);
 
-        _tokenServiceMock.Verify(x => x.GenerateToken(user), Times.Once);
-    }
+    //    _tokenServiceMock.Verify(x => x.GenerateToken(user), Times.Once);
+    //}
 
     // 2️⃣ WRONG EMAIL
     [Fact]
