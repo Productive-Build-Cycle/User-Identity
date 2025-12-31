@@ -13,49 +13,45 @@ using Identity.Core.Dtos.Roles;
 
 namespace Identity.Core.Services;
 
-public class UserrService(UserManager<ApplicationUser> userManagerr,
-    SignInManager<ApplicationUser> signInManager, ITokenService _tokenService, IConfiguration conf,
-    IMapper mapper, IEmailService emailService, IRolesService roleService) : IUserService
+public class UserrService(UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager,
+    ITokenService tokenService, 
+    IConfiguration conf,
+    IMapper mapper, 
+    IEmailService emailService, 
+    IRolesService roleService) : IUserService
 {
-    private readonly UserManager<ApplicationUser> _userManager = userManagerr;
-    private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
-    private readonly ITokenService _tokenServiceInstance = _tokenService;
-    private readonly IConfiguration _conf = conf;
-    private readonly IEmailService _emailService = emailService;
-    private readonly IRolesService _roleService;
-    private readonly IMapper _mapper = mapper;
-
-
+    
     public async Task<RergisterResponse> RegisterAsync(RegisterRequest request)
     {
-        if (await _userManager.FindByEmailAsync(request.Email) is not null)
+        if (await userManager.FindByEmailAsync(request.Email) is not null)
         {
             var error = new IdentityTranslatedErrors().DuplicateEmail(request.Email);
             throw new InvalidOperationException(error.Description);
         }
 
-        var user = _mapper.Map<ApplicationUser>(request);
+        var user = mapper.Map<ApplicationUser>(request);
 
-        var result = await _userManager.CreateAsync(user, request.Password);
+        var result = await userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
             throw new InvalidOperationException(
                 string.Join(" | ", result.Errors.Select(e => e.Description)));
 
         await roleService.AddUserToRoleAsync(new AssignRoleToUserRequest(user.Id, "User"));
 
-        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
         var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-        var backLink = $"{_conf["BaseUrl"]}/api/auth/confirm-email?userId={user.Id}&token={encodedToken}";
+        var backLink = $"{conf["BaseUrl"]}/api/auth/confirm-email?userId={user.Id}&token={encodedToken}";
 
-        var body = await _emailService.TurnHtmlToString("EmailConfirmation.html",
+        var body = await emailService.TurnHtmlToString("EmailConfirmation.html",
                 new Dictionary<string, string>
                 {
                     ["VerificationLink"] = backLink,
                     ["Year"] = DateTime.UtcNow.Year.ToString()
                 });
 
-        await _emailService.SendEmailAsync(new EmailOptions(user.Email, "تایید حساب کاربری", body));
+        await emailService.SendEmailAsync(new EmailOptions(user.Email, "تایید حساب کاربری", body));
 
         return new RergisterResponse(IsEmailConfirmed: false, Email: user.Email,
             Message: "ثبت نام با موفقیت انجام شد. لطفاً ایمیل خود را برای تایید حساب کاربری بررسی کنید.");
@@ -66,26 +62,26 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
             throw new InvalidOperationException("شناسه کاربر یا توکن ارسال نشده است.");
 
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await userManager.FindByIdAsync(userId);
         if (user is null)
             throw new InvalidOperationException("کاربری با این شناسه وجود ندارد.");
 
         var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
 
-        var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+        var result = await userManager.ConfirmEmailAsync(user, decodedToken);
         if (!result.Succeeded)
             throw new InvalidOperationException("توکن نامعتبر، منقضی یا قبلاً استفاده شده است.");
 
-        await _signInManager.SignInAsync(user, isPersistent: false);
+        await signInManager.SignInAsync(user, isPersistent: false);
 
-        var authResponse = await _tokenServiceInstance.GenerateToken(user);
+        var authResponse = await tokenService.GenerateToken(user);
 
         return authResponse;
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var user = await userManager.FindByEmailAsync(request.Email);
 
         if (user is null)
             throw new UnauthorizedAccessException("کاربری با این ایمیل وجود ندارد");
@@ -105,7 +101,7 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
         if (user.Banned)
             throw new InvalidOperationException("اکانت شما مسدود شده است. برای اطلاعات بیشتر با پشتیبانی تماس بگیرید.");
 
-        var result = await _signInManager.CheckPasswordSignInAsync(
+        var result = await signInManager.CheckPasswordSignInAsync(
             user,
             request.Password,
             lockoutOnFailure: true);
@@ -118,7 +114,7 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
 
                 user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(lockoutMinutes);
                 user.LockoutMultiplier *= 2;
-                await _userManager.UpdateAsync(user);
+                await userManager.UpdateAsync(user);
 
                 throw new InvalidOperationException(
                     $"رمز عبور نامعتبر. دسترسی شما به مدت {lockoutMinutes} دقیقه محدود شد");
@@ -130,31 +126,31 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
         if (user.LockoutMultiplier > 1)
         {
             user.LockoutMultiplier = 1;
-            await _userManager.UpdateAsync(user);
+            await userManager.UpdateAsync(user);
         }
 
-        return await _tokenServiceInstance.GenerateToken(user);
+        return await tokenService.GenerateToken(user);
     }
 
     public async Task LogoutAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await userManager.FindByIdAsync(userId);
         if (user is not null)
         {
-            await _userManager.UpdateSecurityStampAsync(user); // نکته: این کد واسه منقضی کدرن توکن های کاربر نوشته شده
+            await userManager.UpdateSecurityStampAsync(user); // نکته: این کد واسه منقضی کدرن توکن های کاربر نوشته شده
         }
 
-        await _signInManager.SignOutAsync();
+        await signInManager.SignOutAsync();
     }
 
     public async Task ChangePasswordAsync(ChangePasswordRequest request)
     {
-        var user = await _userManager.FindByIdAsync(request.UserId);
+        var user = await userManager.FindByIdAsync(request.UserId);
         if (user is null)
             throw new InvalidOperationException(
                 new IdentityTranslatedErrors().UserNotFound(request.UserId).Description);
 
-        var result = await _userManager.ChangePasswordAsync(
+        var result = await userManager.ChangePasswordAsync(
             user,
             request.CurrentPassword,
             request.NewPassword);
@@ -163,12 +159,12 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
             throw new InvalidOperationException(
                 string.Join(" | ", result.Errors.Select(e => e.Description)));
 
-        await _userManager.UpdateSecurityStampAsync(user);
+        await userManager.UpdateSecurityStampAsync(user);
     }
 
     public async Task UpdateAccountAsync(string userId, UpdateUserRequest request)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await userManager.FindByIdAsync(userId);
         if (user is null)
             throw new InvalidOperationException(
                 new IdentityTranslatedErrors().UserNotFound(userId).Description);
@@ -179,7 +175,7 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
         user.UserName = request.Email;
         user.PhoneNumber = request.PhoneNumber;
 
-        var result = await _userManager.UpdateAsync(user);
+        var result = await userManager.UpdateAsync(user);
         if (!result.Succeeded)
             throw new InvalidOperationException(
                 string.Join(" | ", result.Errors.Select(e => e.Description)));
@@ -187,25 +183,25 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
 
     public async Task DeleteAccountAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await userManager.FindByIdAsync(userId);
         if (user is null)
             throw new InvalidOperationException(
                 new IdentityTranslatedErrors().UserNotFound(userId).Description);
 
-        await _userManager.DeleteAsync(user);
+        await userManager.DeleteAsync(user);
     }
 
     public async Task BanAccountAsync(string targetUserId, string actorUserId)
     {
-        var actor = await _userManager.FindByIdAsync(actorUserId);
+        var actor = await userManager.FindByIdAsync(actorUserId);
         if (actor is null)
             throw new UnauthorizedAccessException("کاربر اقدام‌کننده یافت نشد");
 
-        var claims = await _userManager.GetClaimsAsync(actor);
+        var claims = await userManager.GetClaimsAsync(actor);
         if (!claims.Any(c => c.Type == "user.ban"))
             throw new UnauthorizedAccessException("شما اجازه بستن حساب کاربری را ندارید");
 
-        var user = await _userManager.FindByIdAsync(targetUserId);
+        var user = await userManager.FindByIdAsync(targetUserId);
         if (user is null)
             throw new InvalidOperationException(
                 new IdentityTranslatedErrors().UserNotFound(targetUserId).Description);
@@ -215,21 +211,21 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
 
         user.LockoutEnd = DateTimeOffset.MaxValue;
         user.Banned = true;
-        await _userManager.UpdateAsync(user);
-        await _userManager.UpdateSecurityStampAsync(user);
+        await userManager.UpdateAsync(user);
+        await userManager.UpdateSecurityStampAsync(user);
     }
 
     public async Task UnbanAccountAsync(string targetUserId, string actorUserId)
     {
-        var actor = await _userManager.FindByIdAsync(actorUserId);
+        var actor = await userManager.FindByIdAsync(actorUserId);
         if (actor is null)
             throw new UnauthorizedAccessException("کاربر اقدام‌کننده یافت نشد");
 
-        var claims = await _userManager.GetClaimsAsync(actor);
+        var claims = await userManager.GetClaimsAsync(actor);
         if (!claims.Any(c => c.Type == "user.ban"))
             throw new UnauthorizedAccessException("شما اجازه باز کردن حساب کاربری را ندارید");
 
-        var user = await _userManager.FindByIdAsync(targetUserId);
+        var user = await userManager.FindByIdAsync(targetUserId);
         if (user is null)
             throw new InvalidOperationException(
                 new IdentityTranslatedErrors().UserNotFound(targetUserId).Description);
@@ -239,6 +235,6 @@ public class UserrService(UserManager<ApplicationUser> userManagerr,
 
         user.LockoutEnd = null;
         user.Banned = false;
-        await _userManager.UpdateAsync(user);
+        await userManager.UpdateAsync(user);
     }
 }
