@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Identity.Core.Domain.Entities;
-using Identity.Core.DTOs.Users;
+using Identity.Core.Dtos.Users;
 using Identity.Core.Options;
 using Identity.Core.Services;
 using Microsoft.AspNetCore.Identity;

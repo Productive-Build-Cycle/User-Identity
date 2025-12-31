@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Identity.Core.Dtos.Auth;
-using Identity.Core.DTOs.Users;
+using Identity.Core.Dtos.Users;
 using Identity.Core.Domain.Entities;
 
 namespace Identity.Core.MappingProfiles;

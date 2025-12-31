@@ -26,11 +26,11 @@ builder.Services.AddControllers(options =>
     options.Filters.Add(new ConsumesAttribute("application/json"));
 });
 
-builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(opt => 
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(opt =>
 {
     opt.Password.RequireDigit = true;
     opt.Password.RequireUppercase = true;
-    opt.Password.RequireLowercase = true;   
+    opt.Password.RequireLowercase = true;
     opt.Password.RequireNonAlphanumeric = true;
     opt.Password.RequiredUniqueChars = 3;
     opt.Password.RequiredLength = 6;

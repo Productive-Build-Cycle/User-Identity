@@ -1,4 +1,4 @@
-using Identity.Core.DTOs.Users;
+using Identity.Core.Dtos.Users;
 
 namespace Identity.Core.Dtos.Auth;
 
@@ -17,6 +17,11 @@ public record RegisterRequest(
     }
 };
 
+public record RergisterResponse(
+    bool IsEmailConfirmed,
+    string Email,
+    string Message);
+
 public record LoginRequest(
     string Email,
     string Password,
@@ -26,6 +31,18 @@ public record LoginRequest(
 public record RefreshTokenRequest(
     string RefreshToken
 );
+
+public record ChangePasswordRequest(
+    string UserId,
+    string CurrentPassword,
+    string NewPassword,
+    string ConfirmNewPassword
+)
+{
+    public ChangePasswordRequest() : this(default, default, default, default)
+    {
+    }
+};
 
 // ---------- Responses ----------
 public record AuthResponse(
