@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Identity.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
     public class RoleController : BaseController
     {
         private readonly IRolesService _roleService;

@@ -87,7 +87,7 @@ builder.Services.AddAuthorization(options =>
     var permissions = new[]
     {
         "user.create","user.update","user.delete","user.ban","user.unban",
-        "role.create","role.update","role.delete"
+        "role.create","role.update","role.delete", "role.assign"
     };
 
     foreach (var permission in permissions)

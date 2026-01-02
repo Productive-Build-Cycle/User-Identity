@@ -60,7 +60,7 @@ public class UserrService : IUserService
                     .WithMetadata("StatusCode", HttpStatusCode.BadRequest)));
 
         await _roleService.AddUserToRoleAsync(
-            new AssignRoleToUserRequest(user.Id, "User"));
+            new AssignRoleToUserRequest(user.Email!, "User"));
 
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
@@ -77,11 +77,11 @@ public class UserrService : IUserService
             });
 
         await _emailService.SendEmailAsync(
-            new EmailOptions(user.Email, "تایید حساب کاربری", body));
+            new EmailOptions(user.Email!, "تایید حساب کاربری", body));
 
         return Result.Ok(new RergisterResponse(
             IsEmailConfirmed: false,
-            Email: user.Email,
+            Email: user.Email!,
             Message: "ثبت نام با موفقیت انجام شد. لطفاً ایمیل خود را برای تایید حساب کاربری بررسی کنید."
         ));
     }

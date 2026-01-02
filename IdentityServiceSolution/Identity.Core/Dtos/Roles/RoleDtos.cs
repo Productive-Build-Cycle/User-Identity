@@ -23,7 +23,7 @@ public record UpdateRoleRequest(
 };
 
 public record AssignRoleToUserRequest(
-    Guid UserId,
+    string UserEmail,
     string RoleName
 )
 {

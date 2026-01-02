@@ -166,10 +166,10 @@ namespace Identity.Core.Services
         public async Task<Result> AddUserToRoleAsync(AssignRoleToUserRequest request)
         {
             // 1. Finde user by userId
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            var user = await _userManager.FindByEmailAsync(request.UserEmail);
             if (user is null)
             {
-                return Result.Fail(Errors.UserNotFound(request.UserId.ToString()));
+                return Result.Fail(Errors.UserNotFound(request.UserEmail));
             }
             // 2. Finde role by name
             var roleExists = await _roleManager.RoleExistsAsync(request.RoleName);
@@ -190,10 +190,10 @@ namespace Identity.Core.Services
         public async Task<Result> RemoveUserFromRoleAsync(AssignRoleToUserRequest request)
         {
             // 1. Finde user by userId
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            var user = await _userManager.FindByEmailAsync(request.UserEmail);
             if (user is null)
             {
-                return Result.Fail(Errors.UserNotFound(request.UserId.ToString()));
+                return Result.Fail(Errors.UserNotFound(request.UserEmail));
             }
             // 2. Remove role from user
             var result = await _userManager.RemoveFromRoleAsync(user, request.RoleName);

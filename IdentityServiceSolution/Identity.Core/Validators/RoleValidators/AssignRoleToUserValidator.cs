@@ -7,9 +7,10 @@ public class AssignRoleToUserValidator : AbstractValidator<AssignRoleToUserReque
 {
     public AssignRoleToUserValidator()
     {
-        RuleFor(req => req.UserId)
-            .NotEmpty().WithMessage("شناسه کاربر نمیتواند خالی باشد")
-            .Must(id => id != Guid.Empty).WithMessage("شناسه کاربر معتبر نیست");
+        RuleFor(req => req.UserEmail)
+            .NotEmpty().WithMessage("ایمیل نمیتواند خالی باشد")
+            .EmailAddress().WithMessage("فرمت ایمیل وارد شده معتبر نیست")
+            .Must(CustomRequestValidator.BeValidEmail).WithMessage("ایمیل وارد شده متعلق به دامنه معتبری نیست");
 
         RuleFor(req => req.RoleName)
             .NotEmpty().WithMessage("نام نقش نمیتواند خالی باشد")
