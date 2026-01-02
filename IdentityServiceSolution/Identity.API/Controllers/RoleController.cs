@@ -1,6 +1,7 @@
 ﻿using Identity.API.Controllers;
 using Identity.Core.Dtos.Roles;
 using Identity.Core.ServiceContracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Identity.Api.Controllers
@@ -19,6 +20,7 @@ namespace Identity.Api.Controllers
         // -------------------- Roles CRUD --------------------
 
         [HttpPost]
+        [Authorize(Policy = "role.create")]
         public async Task<IActionResult> AddRole([FromBody] AddRoleRequest request)
         {
             var result = await _roleService.AddRoleAsync(request);
@@ -26,6 +28,7 @@ namespace Identity.Api.Controllers
         }
 
         [HttpPut("{roleId}")]
+        [Authorize(Policy = "role.update")]
         public async Task<IActionResult> EditRole(
             [FromRoute] string roleId,
             [FromBody] UpdateRoleRequest request)
@@ -35,6 +38,7 @@ namespace Identity.Api.Controllers
         }
 
         [HttpDelete("{roleId:guid}")]
+        [Authorize(Policy = "role.delete")]
         public async Task<IActionResult> DeleteRole([FromRoute] Guid roleId)
         {
             var result = await _roleService.DeleteRoleAsync(roleId);
@@ -58,6 +62,7 @@ namespace Identity.Api.Controllers
         // -------------------- Users & Roles --------------------
 
         [HttpPost("assign")]
+        [Authorize(Policy = "role.assign")]
         public async Task<IActionResult> AssignRoleToUser(
             [FromBody] AssignRoleToUserRequest request)
         {
@@ -66,6 +71,7 @@ namespace Identity.Api.Controllers
         }
 
         [HttpPost("remove")]
+        [Authorize(Policy = "role.assign")]
         public async Task<IActionResult> RemoveRoleFromUser(
             [FromBody] AssignRoleToUserRequest request)
         {
@@ -83,6 +89,7 @@ namespace Identity.Api.Controllers
         // -------------------- Claims --------------------
 
         [HttpPost("{roleId:guid}/claims")]
+        [Authorize(Policy = "role.create")]
         public async Task<IActionResult> AddClaimToRole(
             [FromRoute] Guid roleId,
             [FromQuery] string type,
@@ -102,6 +109,7 @@ namespace Identity.Api.Controllers
         }
 
         [HttpDelete("{roleId:guid}/claims")]
+        [Authorize(Policy = "role.create")]
         public async Task<IActionResult> RemoveClaimFromRole(
             [FromRoute] Guid roleId,
             [FromQuery] string type,
