@@ -1,14 +1,16 @@
-using System;
-using System.Threading.Tasks;
 using AutoMapper;
 using Identity.Core.Data;
 using Identity.Core.Domain.Entities;
 using Identity.Core.Dtos.Roles;
 using Identity.Core.Exceptions;
+using Identity.Core.ServiceContracts;
 using Identity.Core.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using System;
+using System.Net;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Identity.Tests.RoleTests;
@@ -45,69 +47,180 @@ public class AddRoleAsyncTests
             _mapperMock.Object,
             userManagerMock.Object,
             _roleManagerMock.Object,
-            errorDescriber,
             dbContext
         );
     }
-
+    //sucess
     [Fact]
-    public async Task AddRoleAsync_WhenRoleIsDuplicate_ShouldThrowInvalidOperationException()
+    public async Task AddRoleAsync_ShouldReturnSuccessResult_WhenRoleIsValid()
     {
         // Arrange
-        // ✅ If your AddRoleRequest constructor is (string Name, string Description), keep this:
-        var request = new AddRoleRequest(
-            Name: "Admin",
-            Description: "Administrator role"
-        );
+        var roleName = "admin";
+
+        var request = new AddRoleRequest
+        {
+            Name = roleName,
+            Description = $"{roleName} role"
+        };
 
         _roleManagerMock
-            .Setup(r => r.CreateAsync(It.IsAny<ApplicationRole>()))
-            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Duplicate Role" }));
-
-        // Act
-        Func<Task> act = async () => await _sut.AddRoleAsync(request);
-
-        // Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(act);
-        Assert.Contains("Duplicate Role", ex.Message);
-    }
-
-    [Theory]
-    [InlineData("Admin")]
-    [InlineData("Mentor")]
-    [InlineData("User")]
-    public async Task AddRoleAsync_WhenRoleIsValid_ShouldReturnRoleResponse(string roleName)
-    {
-        // Arrange
-        var request = new AddRoleRequest(
-            Name: roleName,
-            Description: $"{roleName} role"
-        );
+            .Setup(r => r.FindByNameAsync(roleName))
+            .ReturnsAsync((ApplicationRole)null);
 
         _roleManagerMock
             .Setup(r => r.CreateAsync(It.IsAny<ApplicationRole>()))
             .ReturnsAsync(IdentityResult.Success);
 
-        // Mapper should return RoleResponse based on created role
         _mapperMock
-            .Setup(m => m.Map<RoleResponse>(It.IsAny<ApplicationRole>()))
-            .Returns<ApplicationRole>(role =>
+            .Setup(m => m.Map<ApplicationRole>(It.IsAny<AddRoleRequest>()))
+            .Returns(new ApplicationRole
             {
-                // ✅ If your RoleResponse is (Guid Id, string Name, string Description), keep this:
-                return new RoleResponse(role.Id, role.Name!, role.Description);
+                Id = Guid.NewGuid(),
+                Name = roleName,
+                Description = request.Description
             });
 
         // Act
         var result = await _sut.AddRoleAsync(request);
 
-        // Assert
+        // Assert (Result Pattern ✅)
         Assert.NotNull(result);
-        Assert.Equal(roleName, result.Name);
+        Assert.True(result.IsSuccess);
+        Assert.False(result.IsFailed);
+        Assert.Empty(result.Errors);
 
-        _roleManagerMock.Verify(r =>
-            r.CreateAsync(It.Is<ApplicationRole>(x =>
+        var response = result.Value;
+        Assert.NotNull(response);
+        Assert.Equal(roleName, response.Name);
+        Assert.Equal($"{roleName} role", response.Description);
+        Assert.NotEqual(Guid.Empty, response.Id);
+
+        _roleManagerMock.Verify(
+            r => r.CreateAsync(It.Is<ApplicationRole>(x =>
                 x.Name == roleName &&
                 x.Description == $"{roleName} role")),
             Times.Once);
+
+        _roleManagerMock.VerifyNoOtherCalls();
     }
+    //failur
+    [Fact]
+    public async Task AddRoleAsync_ShouldFail_WhenRoleNameIsInvalid()
+    {
+        // Arrange
+        var request = new AddRoleRequest
+        {
+            Name = "superadmin",
+            Description = "invalid role"
+        };
+
+        // Act
+        var result = await _sut.AddRoleAsync(request);
+
+        // Assert
+        Assert.True(result.IsFailed);
+        Assert.False(result.IsSuccess);
+
+        var error = Assert.Single(result.Errors);
+        Assert.Contains("مجاز نیست", error.Message);
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            error.Metadata[ErrorMetadataKeys.StatusCode]);
+
+        _roleManagerMock.Verify(
+            r => r.FindByNameAsync(It.IsAny<string>()),
+            Times.Never);
+
+        _roleManagerMock.Verify(
+            r => r.CreateAsync(It.IsAny<ApplicationRole>()),
+            Times.Never);
+    }
+    //failur
+    [Fact]
+    public async Task AddRoleAsync_ShouldFail_WhenRoleAlreadyExists()
+    {
+        // Arrange
+        var roleId = Guid.NewGuid();
+        var roleName = "admin";
+
+        var existingRole = new ApplicationRole
+        {
+            Id = roleId,
+            Name = roleName
+        };
+
+        _roleManagerMock
+            .Setup(r => r.FindByNameAsync(roleName))
+            .ReturnsAsync(existingRole);
+
+        var request = new AddRoleRequest
+        {
+            Name = roleName,
+            Description = "duplicate role"
+        };
+
+        // Act
+        var result = await _sut.AddRoleAsync(request);
+
+        // Assert
+        Assert.True(result.IsFailed);
+
+        var error = Assert.Single(result.Errors);
+        Assert.Contains("قبلاً ثبت شده", error.Message);
+        Assert.Equal(
+            HttpStatusCode.Conflict,
+            error.Metadata[ErrorMetadataKeys.StatusCode]);
+
+        _roleManagerMock.Verify(
+            r => r.CreateAsync(It.IsAny<ApplicationRole>()),
+            Times.Never);
+    }
+    //failur
+    [Fact]
+    public async Task AddRoleAsync_ShouldFail_WhenIdentityCreateFails()
+    {
+        // Arrange
+        var roleName = "admin";
+
+        _roleManagerMock
+            .Setup(r => r.FindByNameAsync(roleName))
+            .ReturnsAsync((ApplicationRole)null);
+
+        _roleManagerMock
+            .Setup(r => r.CreateAsync(It.IsAny<ApplicationRole>()))
+            .ReturnsAsync(IdentityResult.Failed(
+                new IdentityError { Description = "Identity error" }));
+
+        _mapperMock
+            .Setup(m => m.Map<ApplicationRole>(It.IsAny<AddRoleRequest>()))
+            .Returns(new ApplicationRole
+            {
+                Id = Guid.NewGuid(),
+                Name = roleName
+            });
+
+        var request = new AddRoleRequest
+        {
+            Name = roleName,
+            Description = "test role"
+        };
+
+        // Act
+        var result = await _sut.AddRoleAsync(request);
+
+        // Assert
+        Assert.True(result.IsFailed);
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal("Identity error", error.Message);
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            error.Metadata[ErrorMetadataKeys.StatusCode]);
+    }
+
+
+
+
+
 }
