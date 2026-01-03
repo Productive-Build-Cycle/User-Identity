@@ -21,7 +21,29 @@ A Clean Architecture Identity Provider built with ASP.NET Core. This solution ha
     * **Banning**: Admin capability to ban/unban users indefinitely.
     * **Email Confirmation**: HTML email templates for account verification.
 * **Validation**: FluentValidation for all incoming requests.
+* 
+## Result Pattern Showcase "Why this Architecture?"
+❌ Traditional Approach (Try/Catch hell):
 
+```C#
+
+try {
+   _userManager.CreateAsync(user);
+}
+catch (DuplicateEmailException ex) {
+   return BadRequest(ex.Message);
+}
+```
+
+✅ Our Approach (FluentResults): Clean, readable, and type-safe control flow.
+
+```C#
+
+var result = await _roleService.AddRoleAsync(request);
+if (result.IsFailed)
+    return FromResult(result); // Automatically maps errors to HTTP 400/404/409
+return Ok(result.Value);
+```
 ## 🛠 Prerequisites
 
 Before running the application, ensure you have the following installed:
