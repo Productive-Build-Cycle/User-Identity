@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 
         services.Configure<JwtTokenOptions>(configuration.GetSection(nameof(JwtTokenOptions)));
+        services.Configure<MailCredits>(configuration.GetSection(nameof(MailCredits)));
 
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IUserService, UserrService>();

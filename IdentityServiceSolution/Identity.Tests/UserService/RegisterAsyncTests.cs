@@ -111,7 +111,7 @@ public class RegisterAsyncTests
     //        .ReturnsAsync("EMAIL_BODY");
 
     //    _emailServiceMock
-    //        .Setup(x => x.SendEmailAsync(It.IsAny<EmailOptions>()))
+    //        .Setup(x => x.SendEmailAsync(It.IsAny<EmailMessageModel>()))
     //        .Returns(Task.CompletedTask);
 
     //    // Act
@@ -124,7 +124,7 @@ public class RegisterAsyncTests
 
     //    _userManagerMock.Verify(x => x.CreateAsync(user, request.Password), Times.Once);
     //    _rolesServiceMock.Verify(x => x.AddUserToRoleAsync(It.IsAny<AssignRoleToUserRequest>()), Times.Once);
-    //    _emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<EmailOptions>()), Times.Once);
+    //    _emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<EmailMessageModel>()), Times.Once);
     //}
 
     [Fact]
@@ -150,6 +150,6 @@ public class RegisterAsyncTests
 
         _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
         _rolesServiceMock.Verify(x => x.AddUserToRoleAsync(It.IsAny<AssignRoleToUserRequest>()), Times.Never);
-        _emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<EmailOptions>()), Times.Never);
+        _emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<EmailMessageModel>()), Times.Never);
     }
 }

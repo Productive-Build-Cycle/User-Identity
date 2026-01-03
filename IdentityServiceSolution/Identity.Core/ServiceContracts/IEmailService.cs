@@ -1,12 +1,9 @@
-﻿using Identity.Core.Options;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Identity.Core.Dtos;
 
 namespace Identity.Core.ServiceContracts;
 
 public interface IEmailService
 {
-    Task SendEmailAsync(EmailOptions options);
+    Task SendEmailAsync(EmailMessageModel options);
     Task<string> TurnHtmlToString(string fileName, IDictionary<string, string> values); 
 }

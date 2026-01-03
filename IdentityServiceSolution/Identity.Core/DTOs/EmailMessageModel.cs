@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Identity.Core.Options;
+namespace Identity.Core.Dtos;
 
-public class EmailOptions
+public class EmailMessageModel
 {
-    public EmailOptions(string to, string subject, string body)
+    public EmailMessageModel(string to, string subject, string body)
     {
         To = to;
         Subject = subject;

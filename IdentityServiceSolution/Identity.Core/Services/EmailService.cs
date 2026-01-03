@@ -4,26 +4,34 @@ using Microsoft.AspNetCore.Hosting;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using Identity.Core.Dtos;
+using Microsoft.Extensions.Options;
 
 namespace Identity.Core.Services;
 
-public class EmailService(IWebHostEnvironment env) : IEmailService
+public class EmailService : IEmailService
 {
-    public Task SendEmailAsync(EmailOptions options)
+    private readonly IWebHostEnvironment _env;
+    private readonly MailCredits _mailCreds;
+    public EmailService(IWebHostEnvironment env, IOptionsMonitor<MailCredits> mailCreds)
     {
-        var address = "amirmahditeymoori123@gmail.com";
+        _env = env;
+        _mailCreds = mailCreds.CurrentValue;
+    }
+    public Task SendEmailAsync(EmailMessageModel options)
+    {
         var message = new MailMessage()
         {
-            From = new MailAddress(address, "PBC - Identity"),
+            From = new MailAddress(_mailCreds.MailAddress, _mailCreds.MailTitle),
             To = { options.To },
             Subject = options.Subject,
             Body = options.Body,
             IsBodyHtml = true
         };
 
-        var client = new SmtpClient("smtp.gmail.com", 587)
+        var client = new SmtpClient(_mailCreds.StmpServer, _mailCreds.StmpPort)
         {
-            Credentials = new NetworkCredential(address, "abak aape zjrg shvr"),
+            Credentials = new NetworkCredential(_mailCreds.MailAddress, _mailCreds.StmpPassword),
             EnableSsl = true
         };
 
@@ -34,7 +42,7 @@ public class EmailService(IWebHostEnvironment env) : IEmailService
     public async Task<string> TurnHtmlToString(string fileName, IDictionary<string, string> values)
     {
         var path = Path.Combine(
-           env.ContentRootPath,
+           _env.ContentRootPath,
            "EmailTemplates",
            fileName
        );

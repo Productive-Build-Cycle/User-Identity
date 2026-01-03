@@ -5,13 +5,13 @@ using Identity.Core.Dtos.Auth;
 using Identity.Core.Dtos.Roles;
 using Identity.Core.Dtos.Users;
 using Identity.Core.Exceptions;
-using Identity.Core.Options;
 using Identity.Core.ServiceContracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using System.Net;
 using System.Text;
+using Identity.Core.Dtos;
 
 namespace Identity.Core.Services;
 
@@ -77,7 +77,7 @@ public class UserrService : IUserService
             });
 
         await _emailService.SendEmailAsync(
-            new EmailOptions(user.Email!, "تایید حساب کاربری", body));
+            new EmailMessageModel(user.Email!, "تایید حساب کاربری", body));
 
         return Result.Ok(new RergisterResponse(
             IsEmailConfirmed: false,
