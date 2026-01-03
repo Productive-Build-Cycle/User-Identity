@@ -5,7 +5,7 @@ The project follows a **Clean Architecture** pattern separating concerns between
 # Identity Service Solution
 
 A Clean Architecture Identity Provider built with ASP.NET Core. This solution handles secure user authentication (JWT), role management, dynamic permissions, and account security features like locking and banning.
-
+⚠️ This project is for practice & learning only and has no personal or commercial benefit for anyone.
 ## 🚀 Features
 
 * **Core Identity**: Built on **Microsoft ASP.NET Core Identity** for robust, secure user and role management.
