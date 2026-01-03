@@ -116,6 +116,32 @@ Once the application is running, open your browser to the Swagger UI to interact
 ```plaintext
 https://localhost:7183/swagger
 ```
+## 📮 How to Use the Postman Collection
+
+This repository includes a pre-configured Postman collection to help you test the API endpoints immediately.
+
+### 1. Import the Collection
+1.  **Copy** the JSON content provided for the Postman Collection.
+2.  Save it to a file named `IdentityService.postman_collection.json` on your computer.
+3.  Open **Postman**.
+4.  Click the **Import** button (top left).
+5.  Drag and drop the file you created, or select it from the file dialog.
+
+### 2. Environment Configuration
+The collection comes with **Collection Variables** pre-configured, so you don't strictly need a separate Environment.
+* **baseUrl**: Default is set to `https://localhost:7183`. If your port differs, click on the collection name > **Variables** tab and update `baseUrl`.
+
+### 3. Automatic Token Handling 🪄
+You **do not** need to manually copy-paste JWT tokens!
+* The **Login** request includes a **Test Script** that automatically captures the `accessToken` from the response.
+* It saves this token to the `accessToken` collection variable.
+* All other requests (like "Get All Roles", "Update Account") are configured to inherit this token automatically from the variable.
+
+### 4. Running the Flow
+1.  **Register**: Run the `Auth > Register` request first to create a user (or use the default admin if seeded).
+2.  **Login**: Run the `Auth > Login` request. Check the **Test Results** tab to see "Access Token stored successfully".
+3.  **Authenticated Requests**: Now you can run any protected endpoint (e.g., `Roles > Get All Roles`), and it will work instantly.
+
 ## 🧪 Running Tests
 The solution includes unit tests covering Services and Logic using xUnit and Moq.
 
