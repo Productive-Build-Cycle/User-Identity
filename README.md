@@ -41,7 +41,7 @@ Navigate to `Identity.API/appsettings.json` and update the following settings:
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Integrated Security=SSPI;Persist Security Info=False;User ID=sa;Initial Catalog=test;Data Source=.;TrustServerCertificate=True;"
+    "Default": "Server=YOUR_SERVER;Database=PDSIdentity;Trusted_Connection=True;TrustServerCertificate=True;"
   },
   "JwtTokenOptions": {
     "Issuer": "https://localhost:7183",
