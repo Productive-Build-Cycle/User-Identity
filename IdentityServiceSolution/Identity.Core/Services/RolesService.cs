@@ -56,7 +56,7 @@ namespace Identity.Core.Services
             // 3. Map request to domain model
             var role = _mapper.Map<ApplicationRole>(request);
 
-            // 3. Create role
+            // 4. Create role
             var createResult = await _roleManager.CreateAsync(role);
 
             if (!createResult.Succeeded)
@@ -68,7 +68,7 @@ namespace Identity.Core.Services
                 return Result.Fail(errors);
             }
 
-            // 4. Map response
+            // 5. Map response
             var response = new RoleResponse(
                 Id: role.Id,
                 Name: role.Name,
@@ -79,7 +79,7 @@ namespace Identity.Core.Services
         }
         public async Task<Result> DeleteRoleAsync(Guid roleId)
         {
-            // 1. Finde role by name
+            // 1. Find role by name
             var role = await _roleManager.FindByIdAsync(roleId.ToString());
             if (role is null)
             {
@@ -109,7 +109,7 @@ namespace Identity.Core.Services
 
         public async Task<Result<RoleResponse>> EditRoleAsync(string RoleName, UpdateRoleRequest request)
         {
-            // 1. Finde role by name
+            // 1. Find role by name
             var role = await _roleManager.FindByIdAsync(RoleName);
             if (role is null)
             {
@@ -142,7 +142,7 @@ namespace Identity.Core.Services
 
         public async Task<Result<RoleResponse>> GetRoleByIdAsync(Guid roleId)
         {
-            // 1. Finde role by id
+            // 1. Find role by id
             var role = await _roleManager.FindByIdAsync(roleId.ToString());
             if (role is null)
             {
@@ -165,13 +165,13 @@ namespace Identity.Core.Services
         // -------------------- Users & Roles --------------------
         public async Task<Result> AddUserToRoleAsync(AssignRoleToUserRequest request)
         {
-            // 1. Finde user by userId
+            // 1. Find user by userId
             var user = await _userManager.FindByEmailAsync(request.UserEmail);
             if (user is null)
             {
                 return Result.Fail(Errors.UserNotFound(request.UserEmail));
             }
-            // 2. Finde role by name
+            // 2. Find role by name
             var roleExists = await _roleManager.RoleExistsAsync(request.RoleName);
             if (!roleExists)
             {
@@ -189,7 +189,7 @@ namespace Identity.Core.Services
 
         public async Task<Result> RemoveUserFromRoleAsync(AssignRoleToUserRequest request)
         {
-            // 1. Finde user by userId
+            // 1. Find user by userId
             var user = await _userManager.FindByEmailAsync(request.UserEmail);
             if (user is null)
             {
