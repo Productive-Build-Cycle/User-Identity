@@ -8,6 +8,7 @@ A Clean Architecture Identity Provider built with ASP.NET Core. This solution ha
 
 ## 🚀 Features
 
+* **Core Identity**: Built on **Microsoft ASP.NET Core Identity** for robust, secure user and role management.
 * **Authentication**: JWT-based login with Refresh Tokens.
 * **Role Management**: Create, Edit, Delete roles and assign them to users.
 * **Dynamic Permissions**: Granular permission claims (e.g., `user.create`, `role.assign`) enforced via Policy-based authorization.
