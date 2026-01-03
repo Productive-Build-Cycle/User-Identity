@@ -28,10 +28,10 @@ Before running the application, ensure you have the following installed:
 ## ⚙️ Setup & Configuration
 
 ### 1. Fix Target Framework
-Open the `.csproj` files for both **Identity.API** and **Identity.Core** and update the framework version to a stable release:
+Open the `.csproj` files for both **Identity.API** and **Identity.Core** and update the framework version to a latest release:
 
 ```xml
-<TargetFramework>net8.0</TargetFramework>
+<TargetFramework>net10.0</TargetFramework>
 ```
 ### 2. Configure App Settings
 Navigate to `Identity.API/appsettings.json` and update the following settings:
