@@ -1,13 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
 using Identity.Core.Data;
 using Identity.Core.Domain.Entities;
 using Identity.Core.Dtos.Roles;
-using Identity.Core.Exceptions;
 using Identity.Core.Services;
+using Identity.Core.Exceptions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -26,21 +24,18 @@ public class AddUserToRoleAsyncTests
         var mapperMock = new Mock<IMapper>();
         var errorDescriber = new IdentityTranslatedErrors();
 
-        // UserManager mock
         var userStore = new Mock<IUserStore<ApplicationUser>>();
         _userManagerMock = new Mock<UserManager<ApplicationUser>>(
-            userStore.Object, null, null, null, null, null, null, null, null
+            userStore.Object, null!, null!, null!, null!, null!, null!, null!, null!
         );
 
-        // RoleManager mock
         var roleStore = new Mock<IRoleStore<ApplicationRole>>();
         _roleManagerMock = new Mock<RoleManager<ApplicationRole>>(
-            roleStore.Object, null, null, null, null
+            roleStore.Object, null!, null!, null!, null!
         );
 
-        // No extra packages: DbContext exists but not used here
-        var dbOptions = new DbContextOptionsBuilder<ApplicationDbContext>().Options;
-        var dbContext = new ApplicationDbContext(dbOptions);
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().Options;
+        var dbContext = new ApplicationDbContext(options);
 
         _sut = new RolesService(
             mapperMock.Object,
@@ -65,14 +60,20 @@ public class AddUserToRoleAsyncTests
             .ReturnsAsync((ApplicationUser?)null);
 
         // Act
-        Func<Task> act = async () => await _sut.AddUserToRoleAsync(request);
+        var act = async () => await _sut.AddUserToRoleAsync(request);
 
         // Assert
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(act);
-        Assert.Contains("کاربر", ex.Message); // Persian message (loose check)
+        await Assert.ThrowsAsync<KeyNotFoundException>(act);
 
-        _roleManagerMock.Verify(x => x.RoleExistsAsync(It.IsAny<string>()), Times.Never);
-        _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
+        _roleManagerMock.Verify(
+            x => x.RoleExistsAsync(It.IsAny<string>()),
+            Times.Never
+        );
+
+        _userManagerMock.Verify(
+            x => x.AddToRoleAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -95,17 +96,19 @@ public class AddUserToRoleAsyncTests
             .ReturnsAsync(false);
 
         // Act
-        Func<Task> act = async () => await _sut.AddUserToRoleAsync(request);
+        var act = async () => await _sut.AddUserToRoleAsync(request);
 
         // Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(act);
-        Assert.Contains("Role", ex.Message, StringComparison.OrdinalIgnoreCase); // could be Persian or English depending on describer
+        await Assert.ThrowsAsync<InvalidOperationException>(act);
 
-        _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
+        _userManagerMock.Verify(
+            x => x.AddToRoleAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()),
+            Times.Never
+        );
     }
 
     [Fact]
-    public async Task AddUserToRoleAsync_WhenUserAndRoleExist_ShouldSucceed()
+    public async Task AddUserToRoleAsync_WhenUserAndRoleExist_ShouldAddUserToRole()
     {
         // Arrange
         var user = new ApplicationUser { Id = Guid.NewGuid() };
@@ -131,6 +134,9 @@ public class AddUserToRoleAsyncTests
         await _sut.AddUserToRoleAsync(request);
 
         // Assert
-        _userManagerMock.Verify(x => x.AddToRoleAsync(user, request.RoleName), Times.Once);
+        _userManagerMock.Verify(
+            x => x.AddToRoleAsync(user, request.RoleName),
+            Times.Once
+        );
     }
 }

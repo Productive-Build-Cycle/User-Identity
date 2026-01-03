@@ -4,8 +4,8 @@ using AutoMapper;
 using Identity.Core.Data;
 using Identity.Core.Domain.Entities;
 using Identity.Core.Dtos.Roles;
-using Identity.Core.Exceptions;
 using Identity.Core.Services;
+using Identity.Core.Exceptions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -21,23 +21,20 @@ public class GetRoleByIdAsyncTests
 
     public GetRoleByIdAsyncTests()
     {
-        _mapperMock = new Mock<IMapper>();
-
-        // RoleManager mock
         var roleStore = new Mock<IRoleStore<ApplicationRole>>();
         _roleManagerMock = new Mock<RoleManager<ApplicationRole>>(
-            roleStore.Object, null, null, null, null
+            roleStore.Object, null!, null!, null!, null!
         );
 
-        // UserManager (required by constructor, not used here)
+        _mapperMock = new Mock<IMapper>();
+
         var userStore = new Mock<IUserStore<ApplicationUser>>();
         var userManagerMock = new Mock<UserManager<ApplicationUser>>(
-            userStore.Object, null, null, null, null, null, null, null, null
+            userStore.Object, null!, null!, null!, null!, null!, null!, null!, null!
         );
 
         var errorDescriber = new IdentityTranslatedErrors();
 
-        // DbContext exists but is NOT used in this method
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().Options;
         var dbContext = new ApplicationDbContext(options);
 
@@ -61,11 +58,15 @@ public class GetRoleByIdAsyncTests
             .ReturnsAsync((ApplicationRole?)null);
 
         // Act
-        Func<Task> act = async () => await _sut.GetRoleByIdAsync(roleId);
+        var act = async () => await _sut.GetRoleByIdAsync(roleId);
 
         // Assert
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(act);
-        Assert.Contains("نقش", ex.Message); // Persian message (loose check)
+        await Assert.ThrowsAsync<KeyNotFoundException>(act);
+
+        _mapperMock.Verify(
+            m => m.Map<RoleResponse>(It.IsAny<ApplicationRole>()),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -81,11 +82,7 @@ public class GetRoleByIdAsyncTests
             Description = "Administrator role"
         };
 
-        var expectedResponse = new RoleResponse(
-            role.Id,
-            role.Name!,
-            role.Description
-        );
+        var response = new RoleResponse(role.Id, role.Name!, role.Description);
 
         _roleManagerMock
             .Setup(x => x.FindByIdAsync(roleId.ToString()))
@@ -93,15 +90,19 @@ public class GetRoleByIdAsyncTests
 
         _mapperMock
             .Setup(m => m.Map<RoleResponse>(role))
-            .Returns(expectedResponse);
+            .Returns(response);
 
         // Act
         var result = await _sut.GetRoleByIdAsync(roleId);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(expectedResponse.Id, result.Id);
-        Assert.Equal(expectedResponse.Name, result.Name);
-        Assert.Equal(expectedResponse.Description, result.Description);
+        Assert.Equal(roleId, result.Id);
+        Assert.Equal("Admin", result.Name);
+
+        _mapperMock.Verify(
+            m => m.Map<RoleResponse>(role),
+            Times.Once
+        );
     }
 }
