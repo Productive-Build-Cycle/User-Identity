@@ -1,3 +1,11 @@
+# Identity Service Solution
+
+A Clean Architecture Identity Provider built with ASP.NET Core. This solution handles secure user authentication (JWT), role management, dynamic permissions, and account security features like locking and banning.
+
+## 🏗 Architecture
+
+The project follows a **Clean Architecture** pattern separating concerns between the API (Presentation), Core (Business Logic), and Data access.
+
 ```mermaid
 classDiagram
     %% Domain Entities
@@ -44,44 +52,10 @@ classDiagram
         +GenerateToken()
         +GenerateRefreshToken()
     }
-    class IEmailService {
-        <<interface>>
-        +SendEmailAsync()
-    }
-
-    %% Service Implementations
-    class UserrService {
-        -UserManager~ApplicationUser~ _userManager
-        -SignInManager~ApplicationUser~ _signInManager
-    }
-    class RolesService {
-        -RoleManager~ApplicationRole~ _roleManager
-        -UserManager~ApplicationUser~ _userManager
-    }
-    class TokenService {
-        -JwtTokenOptions _options
-    }
-    class EmailService {
-        -SmtpClient _client
-    }
 
     %% Relationships
     AuthController --> IUserService : Uses
     RoleController --> IRolesService : Uses
-
-    UserrService ..|> IUserService : Implements
-    RolesService ..|> IRolesService : Implements
-    TokenService ..|> ITokenService : Implements
-    EmailService ..|> IEmailService : Implements
-
-    UserrService --> ITokenService : Injects
-    UserrService --> IEmailService : Injects
-    UserrService --> IRolesService : Injects
-    
-    UserrService --> ApplicationUser : Manages
-    RolesService --> ApplicationRole : Manages
-    RolesService --> ApplicationUser : Assigns Roles
-
-    note for UserrService "Handles Registration,\nLogin, & Ban Logic"
-    note for RolesService "Handles CRUD for Roles\n& Claim Assignment"
-```
+    IUserService --> ITokenService : Uses
+    IUserService --> ApplicationUser : Manages
+    IRolesService --> ApplicationRole : Manages
