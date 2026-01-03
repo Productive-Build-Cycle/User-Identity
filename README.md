@@ -21,8 +21,7 @@ A Clean Architecture Identity Provider built with ASP.NET Core. This solution ha
 
 Before running the application, ensure you have the following installed:
 
-1.  **.NET SDK**: Version **10.0**(Recommended).
-    * *Note: The project files currently reference `net10.0` (preview). You must change this to a stable version like `net8.0` before building.*
+1.  **.NET SDK**: Version **10.0** (Recommended).
 2.  **SQL Server**: LocalDB, Express, or Docker container.
 3.  **IDE**: Visual Studio 2022 or VS Code.
 
