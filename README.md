@@ -144,11 +144,9 @@ https://localhost:7183/swagger
 This repository includes a pre-configured Postman collection to help you test the API endpoints immediately.
 
 ### 1. Import the Collection
-1.  **Copy** the JSON content provided for the Postman Collection.
-2.  Save it to a file named `IdentityService.postman_collection.json` on your computer.
-3.  Open **Postman**.
-4.  Click the **Import** button (top left).
-5.  Drag and drop the file you created, or select it from the file dialog.
+1.  Open **Postman**.
+2.  Click the **Import** button (top left).
+3.  Drag and drop the file  `IdentityService.postman_collection.json`, or select it from the file dialog.
 
 ### 2. Environment Configuration
 The collection comes with **Collection Variables** pre-configured, so you don't strictly need a separate Environment.
