@@ -81,9 +81,32 @@ Navigate to `Identity.API/appsettings.json` and update the following settings:
 }
 ```
 ### 3. Configure Email Service
-**Important:** The current email service uses hardcoded credentials.
-* **For Production:** Refactor `EmailService.cs` to read credentials from `appsettings.json`.
-* **For Development:** You can temporarily update the hardcoded credentials in `Identity.Core/Services/EmailService.cs` with your own test SMTP settings.
+
+Navigate to `Identity.API/appsettings.json` and add or update the **MailCredits** section as shown below:
+
+* **MailAddress**: The sender email address (e.g. Gmail)
+* **MailTitle**: The display name used in outgoing emails
+* **StmpServer**: SMTP server address (for Gmail: `smtp.gmail.com`)
+* **StmpPort**: SMTP port (for TLS: `587`)
+* **StmpPassword**: The SMTP password or app-specific password
+
+```json
+{
+  "MailCredits": {
+    "MailAddress": "YOUR_EMAIL@gmail.com",
+    "MailTitle": "PBC - Identity",
+    "StmpServer": "smtp.gmail.com",
+    "StmpPort": 587,
+    "StmpPassword": "REPLACE_WITH_YOUR_SMTP_PASSWORD"
+  }
+}
+```
+
+#### Notes
+
+* For **Gmail**, you must use an **App Password**, not your regular account password.
+* Never commit real SMTP credentials to source control.
+* In production, ensure secrets are stored securely (e.g. environment variables or a secret manager).
 
 ### 4. Database Initialization
 Run the Entity Framework migrations to create the database and tables:
