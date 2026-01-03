@@ -23,7 +23,7 @@ Before running the application, ensure you have the following installed:
 
 1.  **.NET SDK**: Version **10.0** (Recommended).
 2.  **SQL Server**: LocalDB, Express, or Docker container.
-3.  **IDE**: Visual Studio 2022 or VS Code.
+3.  **IDE**: Visual Studio 2026 or VS Code.
 
 ## ⚙️ Setup & Configuration
 
