@@ -6,56 +6,100 @@ A Clean Architecture Identity Provider built with ASP.NET Core. This solution ha
 
 The project follows a **Clean Architecture** pattern separating concerns between the API (Presentation), Core (Business Logic), and Data access.
 
-```mermaid
-classDiagram
-    %% Domain Entities
-    class ApplicationUser {
-        +string FirstName
-        +string LastName
-        +string RefreshToken
-        +bool Banned
-        +int LockoutMultiplier
-    }
-    class ApplicationRole {
-        +string Description
-    }
+## 🚀 Features
 
-    %% Controllers
-    class AuthController {
-        +Register()
-        +Login()
-        +ConfirmEmail()
-        +ChangePassword()
-    }
-    class RoleController {
-        +AddRole()
-        +EditRole()
-        +AssignRoleToUser()
-        +AddClaimToRole()
-    }
+* **Authentication**: JWT-based login with Refresh Tokens.
+* **Role Management**: Create, Edit, Delete roles and assign them to users.
+* **Dynamic Permissions**: Granular permission claims (e.g., `user.create`, `role.assign`) enforced via Policy-based authorization.
+* **Security**:
+    * **Account Locking**: Exponential lockout time based on `LockoutMultiplier` after failed attempts.
+    * **Banning**: Admin capability to ban/unban users indefinitely.
+    * **Email Confirmation**: HTML email templates for account verification.
+* **Validation**: FluentValidation for all incoming requests.
 
-    %% Service Interfaces
-    class IUserService {
-        <<interface>>
-        +RegisterAsync()
-        +LoginAsync()
-        +BanAccountAsync()
-    }
-    class IRolesService {
-        <<interface>>
-        +AddRoleAsync()
-        +AddUserToRoleAsync()
-        +GetRolesHavingClaimAsync()
-    }
-    class ITokenService {
-        <<interface>>
-        +GenerateToken()
-        +GenerateRefreshToken()
-    }
+## 🛠 Prerequisites
 
-    %% Relationships
-    AuthController --> IUserService : Uses
-    RoleController --> IRolesService : Uses
-    IUserService --> ITokenService : Uses
-    IUserService --> ApplicationUser : Manages
-    IRolesService --> ApplicationRole : Manages
+Before running the application, ensure you have the following installed:
+
+1.  **.NET SDK**: Version **8.0** or **9.0** (Recommended).
+    * *Note: The project files currently reference `net10.0` (preview). You must change this to a stable version like `net8.0` before building.*
+2.  **SQL Server**: LocalDB, Express, or Docker container.
+3.  **IDE**: Visual Studio 2022 or VS Code.
+
+## ⚙️ Setup & Configuration
+
+### 1. Fix Target Framework
+Open the `.csproj` files for both **Identity.API** and **Identity.Core** and update the framework version to a stable release:
+
+```xml
+<TargetFramework>net8.0</TargetFramework>
+```
+### 2. Configure App Settings
+Navigate to `Identity.API/appsettings.json` and update the following settings:
+* **ConnectionStrings**: Point `Default` to your local SQL Server instance.
+* **JwtTokenOptions**: Provide a secure, long string (at least 32 chars) for the `Key`.
+
+```json
+{
+  "ConnectionStrings": {
+    "Default": "Server=YOUR_SERVER;Database=PDSIdentity;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "JwtTokenOptions": {
+    "Issuer": "https://localhost:7183",
+    "Audience": "https://localhost:7183",
+    "Key": "REPLACE_THIS_WITH_A_VERY_LONG_SECURE_RANDOM_STRING_AT_LEAST_32_CHARS",
+    "ExpieryInMinutes": 60,
+    "RefreshTokenExpieryInDays": 5
+  },
+  "BaseUrl": "https://localhost:7183"
+}
+```
+### 3. Configure Email Service
+**Important:** The current email service uses hardcoded credentials.
+* **For Production:** Refactor `EmailService.cs` to read credentials from `appsettings.json`.
+* **For Development:** You can temporarily update the hardcoded credentials in `Identity.Core/Services/EmailService.cs` with your own test SMTP settings.
+
+### 4. Database Initialization
+Run the Entity Framework migrations to create the database and tables:
+
+```bash
+# Open terminal in the solution root folder
+dotnet ef database update --project Identity.Core --startup-project Identity.API
+```
+The application includes a `RoleInitializer` that will automatically seed default roles (Admin, Mentor, User) and permissions when you first run the app.
+
+## 🏃‍♂️ How to Run
+
+### Option A: Using Visual Studio
+1. Open `IdentityServiceSolution.sln` or `IdentityServiceSolution.slnx`.
+2. Set **Identity.API** as the Startup Project.
+3. Press **F5** or click **Run**.
+
+### Option B: Using CLI
+1. Open a terminal in the solution root.
+2. Run the API project:
+
+```bash
+dotnet run --project Identity.API
+```
+The application will start, typically on `https://localhost:7183`.
+
+## 📖 API Documentation
+Once the application is running, open your browser to the Swagger UI to interact with the endpoints:
+
+```plaintext
+https://localhost:7183/swagger
+```
+## 🧪 Running Tests
+The solution includes unit tests covering Services and Logic using xUnit and Moq.
+
+```bash
+dotnet test Identity.Tests/Identity.Tests.csproj
+```
+## 🔑 Default Roles & Permissions
+
+| Role | Key Permissions |
+| :--- | :--- |
+| **Admin** | `user.*`, `role.*` (Full Access) |
+| **Mentor** | `user.ban`, `user.unban`, `user.update` |
+| **User** | `user.delete`, `user.update` (Self management) |
