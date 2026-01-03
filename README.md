@@ -146,7 +146,7 @@ This repository includes a pre-configured Postman collection to help you test th
 ### 1. Import the Collection
 1.  Open **Postman**.
 2.  Click the **Import** button (top left).
-3.  Drag and drop the file  `IdentityService.postman_collection.json`, or select it from the file dialog.
+3.  Drag and drop the file `IdentityService.postman_collection.json`, or select it from the file dialog.
 
 ### 2. Environment Configuration
 The collection comes with **Collection Variables** pre-configured, so you don't strictly need a separate Environment.
