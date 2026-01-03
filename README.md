@@ -11,6 +11,8 @@ A Clean Architecture Identity Provider built with ASP.NET Core. This solution ha
 * **Authentication**: JWT-based login with Refresh Tokens.
 * **Role Management**: Create, Edit, Delete roles and assign them to users.
 * **Dynamic Permissions**: Granular permission claims (e.g., `user.create`, `role.assign`) enforced via Policy-based authorization.
+* **Error Handling**: Implements the **Result Pattern** using **FluentResults** to replace exceptions with explicit success/failure returns.
+* **Logging**: Structured logging configured with **Serilog**, supporting Console and Seq sinks.
 * **Security**:
     * **Account Locking**: Exponential lockout time based on `LockoutMultiplier` after failed attempts.
     * **Banning**: Admin capability to ban/unban users indefinitely.
