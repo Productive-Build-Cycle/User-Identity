@@ -179,15 +179,4 @@ dotnet test Identity.Tests/Identity.Tests.csproj
 | **Mentor** | `user.ban`, `user.unban`, `user.update` |
 | **User** | `user.delete`, `user.update` (Self management) |
 
-## 🐳 Running with Docker
-Open your terminal in the solution root (where the Dockerfile is) and run:
-
-```bash
-docker build -t identity-service .
-```
-then run:
-```bash
-docker-compose up
-```
-
 
