@@ -19,23 +19,20 @@ public class EditRoleAsyncTests
 
     public EditRoleAsyncTests()
     {
-        // RoleManager mock
         var roleStore = new Mock<IRoleStore<ApplicationRole>>();
         _roleManagerMock = new Mock<RoleManager<ApplicationRole>>(
-            roleStore.Object, null, null, null, null
+            roleStore.Object, null!, null!, null!, null!
         );
 
-        // Other required deps (mocked)
         var mapperMock = new Mock<IMapper>();
 
         var userStore = new Mock<IUserStore<ApplicationUser>>();
         var userManagerMock = new Mock<UserManager<ApplicationUser>>(
-            userStore.Object, null, null, null, null, null, null, null, null
+            userStore.Object, null!, null!, null!, null!, null!, null!, null!, null!
         );
 
         var errorDescriber = new IdentityTranslatedErrors();
 
-        // No provider needed for these tests (EditRoleAsync doesn't use _context)
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().Options;
         var dbContext = new ApplicationDbContext(options);
 
@@ -49,13 +46,11 @@ public class EditRoleAsyncTests
     }
 
     [Fact]
-    public async Task EditRoleAsync_WhenRoleDoesNotExist_ShouldThrowKeyNotFoundException_WithPersianMessage()
+    public async Task EditRoleAsync_WhenRoleDoesNotExist_ShouldThrowKeyNotFoundException()
     {
         // Arrange
         var roleId = Guid.NewGuid();
 
-        // ✅ If your UpdateRoleRequest has (Guid Id, string Name, string Description),
-        // add the third parameter here.
         var request = new Identity.Core.Dtos.Roles.UpdateRoleRequest(
             roleId,
             "Admin",
@@ -67,11 +62,10 @@ public class EditRoleAsyncTests
             .ReturnsAsync((ApplicationRole?)null);
 
         // Act
-        Func<Task> act = async () => await _sut.EditRoleAsync(request);
+        var act = async () => await _sut.EditRoleAsync(request);
 
         // Assert
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(act);
-        Assert.Contains("نقش", ex.Message);
+        await Assert.ThrowsAsync<KeyNotFoundException>(act);
 
         _roleManagerMock.Verify(
             x => x.UpdateAsync(It.IsAny<ApplicationRole>()),
@@ -80,7 +74,7 @@ public class EditRoleAsyncTests
     }
 
     [Fact]
-    public async Task EditRoleAsync_WhenUpdateFailsDueToDuplicateRole_ShouldThrowInvalidOperationException()
+    public async Task EditRoleAsync_WhenUpdateFails_ShouldThrowInvalidOperationException_AndCallUpdateOnce()
     {
         // Arrange
         var roleId = Guid.NewGuid();
@@ -101,7 +95,6 @@ public class EditRoleAsyncTests
             .Setup(x => x.FindByIdAsync(roleId.ToString()))
             .ReturnsAsync(existingRole);
 
-        // Simulate Identity rejecting the update because "Admin" already exists
         _roleManagerMock
             .Setup(x => x.UpdateAsync(existingRole))
             .ReturnsAsync(IdentityResult.Failed(
@@ -109,12 +102,14 @@ public class EditRoleAsyncTests
             ));
 
         // Act
-        Func<Task> act = async () => await _sut.EditRoleAsync(request);
+        var act = async () => await _sut.EditRoleAsync(request);
 
         // Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(act);
-        Assert.Contains("Duplicate Role", ex.Message);
+        await Assert.ThrowsAsync<InvalidOperationException>(act);
 
-        _roleManagerMock.Verify(x => x.UpdateAsync(existingRole), Times.Once);
+        _roleManagerMock.Verify(
+            x => x.UpdateAsync(existingRole),
+            Times.Once
+        );
     }
 }

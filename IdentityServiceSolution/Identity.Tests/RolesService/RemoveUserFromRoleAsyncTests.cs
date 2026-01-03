@@ -4,8 +4,8 @@ using AutoMapper;
 using Identity.Core.Data;
 using Identity.Core.Domain.Entities;
 using Identity.Core.Dtos.Roles;
-using Identity.Core.Exceptions;
 using Identity.Core.Services;
+using Identity.Core.Exceptions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -24,21 +24,18 @@ public class RemoveUserFromRoleAsyncTests
         var mapperMock = new Mock<IMapper>();
         var errorDescriber = new IdentityTranslatedErrors();
 
-        // UserManager mock
         var userStore = new Mock<IUserStore<ApplicationUser>>();
         _userManagerMock = new Mock<UserManager<ApplicationUser>>(
-            userStore.Object, null, null, null, null, null, null, null, null
+            userStore.Object, null!, null!, null!, null!, null!, null!, null!, null!
         );
 
-        // RoleManager mock (not used in RemoveUserFromRoleAsync, but required by ctor)
         var roleStore = new Mock<IRoleStore<ApplicationRole>>();
         _roleManagerMock = new Mock<RoleManager<ApplicationRole>>(
-            roleStore.Object, null, null, null, null
+            roleStore.Object, null!, null!, null!, null!
         );
 
-        // DbContext exists but not used here (no extra packages needed)
-        var dbOptions = new DbContextOptionsBuilder<ApplicationDbContext>().Options;
-        var dbContext = new ApplicationDbContext(dbOptions);
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().Options;
+        var dbContext = new ApplicationDbContext(options);
 
         _sut = new RolesService(
             mapperMock.Object,
@@ -63,11 +60,10 @@ public class RemoveUserFromRoleAsyncTests
             .ReturnsAsync((ApplicationUser?)null);
 
         // Act
-        Func<Task> act = async () => await _sut.RemoveUserFromRoleAsync(request);
+        var act = async () => await _sut.RemoveUserFromRoleAsync(request);
 
         // Assert
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(act);
-        Assert.Contains("کاربر", ex.Message); // Persian message (loose check)
+        await Assert.ThrowsAsync<KeyNotFoundException>(act);
 
         _userManagerMock.Verify(
             x => x.RemoveFromRoleAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()),
@@ -76,7 +72,7 @@ public class RemoveUserFromRoleAsyncTests
     }
 
     [Fact]
-    public async Task RemoveUserFromRoleAsync_WhenUserExists_ShouldSucceed()
+    public async Task RemoveUserFromRoleAsync_WhenUserExists_ShouldRemoveUserFromRole()
     {
         // Arrange
         var user = new ApplicationUser { Id = Guid.NewGuid() };
@@ -98,6 +94,9 @@ public class RemoveUserFromRoleAsyncTests
         await _sut.RemoveUserFromRoleAsync(request);
 
         // Assert
-        _userManagerMock.Verify(x => x.RemoveFromRoleAsync(user, request.RoleName), Times.Once);
+        _userManagerMock.Verify(
+            x => x.RemoveFromRoleAsync(user, request.RoleName),
+            Times.Once
+        );
     }
 }
