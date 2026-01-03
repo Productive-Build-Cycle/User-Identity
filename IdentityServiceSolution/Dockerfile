@@ -1,5 +1,5 @@
 # 1. Build Stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy the solution file and project files first (for better caching)
@@ -25,4 +25,5 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 COPY --from=build /app/publish .
+
 ENTRYPOINT ["dotnet", "Identity.API.dll"]
